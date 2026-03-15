@@ -2,7 +2,8 @@ import { Link } from "react-router";
 import { Navbar } from "../components/navbar";
 import { Footer } from "../components/footer";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-
+import sabiBanner from "../assets/sabi_banner.jpg";
+import sabiLogo from "../assets/sabi-logo.jpg";
 
 import {
   Zap,
@@ -16,13 +17,27 @@ import {
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white scroll-smooth">
       <Navbar />
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-16 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
+            <div className="flex items-center gap-3 mb-6">
+              <img
+                src={sabiLogo}
+                alt="SabiCard"
+                className="w-14 h-14 object-contain rounded-lg"
+              />
+              <div>
+                <h2 className="text-2xl font-bold leading-tight">SabiCard</h2>
+                <p className="text-sm text-gray-500">
+                  Your card tells people who you are
+                </p>
+              </div>
+            </div>
+
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
               Tap. Share. Connect.
             </h1>
@@ -30,6 +45,7 @@ export function LandingPage() {
               Transform the way you network with NFC digital business cards.
               Share your contact information instantly with a single tap.
             </p>
+
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 to="/register"
@@ -38,18 +54,20 @@ export function LandingPage() {
                 Get Started
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link
-                to="/#pricing"
+
+              <a
+                href="#pricing"
                 className="border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-6 py-3 text-center"
               >
                 Buy NFC Card
-              </Link>
+              </a>
             </div>
           </div>
+
           <div className="relative">
             <ImageWithFallback
-              src="https://images.unsplash.com/photo-1758887248912-03a0c34a2f41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGNhcmQlMjB0YXB8ZW58MXx8fHwxNzczNTM4NDUzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-              alt="NFC Business Card"
+              src={sabiBanner}
+              alt="SabiCard NFC Business Card"
               className="rounded-2xl shadow-2xl w-full"
             />
           </div>
@@ -57,7 +75,7 @@ export function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="bg-gray-50 py-16">
+      <section id="features" className="bg-gray-50 py-16 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Why Choose SabiCard?</h2>
@@ -106,7 +124,7 @@ export function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-16">
+      <section id="how-it-works" className="py-16 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">How It Works</h2>
@@ -159,7 +177,7 @@ export function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="bg-gray-50 py-16">
+      <section id="pricing" className="bg-gray-50 py-16 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Simple Pricing</h2>
