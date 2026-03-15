@@ -68,6 +68,7 @@ export function LandingPage() {
             <ImageWithFallback
               src={sabiBanner}
               alt="SabiCard NFC Business Card"
+
               className="rounded-2xl shadow-2xl w-full"
             />
           </div>
