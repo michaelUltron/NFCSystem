@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { Navbar } from "../components/navbar";
 import { Footer } from "../components/footer";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-
+import sabiLogo from "../assets/sabi_banner.jpg";
 
 import {
   Zap,
@@ -48,7 +48,7 @@ export function LandingPage() {
           </div>
           <div className="relative">
             <ImageWithFallback
-              src="https://images.unsplash.com/photo-1758887248912-03a0c34a2f41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBidXNpbmVzcyUyMGNhcmQlMjB0YXB8ZW58MXx8fHwxNzczNTM4NDUzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+              src={sabiLogo}
               alt="NFC Business Card"
               className="rounded-2xl shadow-2xl w-full"
             />
