@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import sabiLogo from "../assets/sabi-logo.png";
 
 export function Footer() {
   return (
@@ -8,7 +9,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg"></div>
+              {/* <div className="w-8 h-8 bg-indigo-600 rounded-lg"></div> */}
+              <img src={sabiLogo} alt="SabiCard" className="w-8 h-8 object-contain" />
               <span className="font-semibold text-xl">SabiCard</span>
             </div>
             <p className="text-gray-400 text-sm">

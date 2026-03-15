@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { Menu } from "lucide-react";
 import { useState } from "react";
+import sabiLogo from "../assets/sabi-logo.png";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -10,21 +11,22 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg"></div>
+            {/* <div className="w-8 h-8 bg-indigo-600 rounded-lg"></div> */}
+            <img src={sabiLogo} alt="SabiCard" className="w-8 h-8 object-contain" />
             <span className="font-semibold text-xl">SabiCard</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <Link to="/#features" className="text-gray-600 hover:text-gray-900">
+            <a href="#features"className="text-gray-600 hover:text-gray-900">
               Features
-            </Link>
-            <Link to="/#pricing" className="text-gray-600 hover:text-gray-900">
+            </a>
+            <a  href="#pricing" className="text-gray-600 hover:text-gray-900">
               Pricing
-            </Link>
-            <Link to="/#how-it-works" className="text-gray-600 hover:text-gray-900">
+            </a>
+            <a  href="#how-it-works" className="text-gray-600 hover:text-gray-900">
               How it works
-            </Link>
+            </a>
             <Link to="/login" className="text-gray-600 hover:text-gray-900">
               Login
             </Link>
@@ -48,15 +50,15 @@ export function Navbar() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 flex flex-col gap-4">
-            <Link to="/#features" className="text-gray-600 hover:text-gray-900">
+            <a href="#features" className="text-gray-600 hover:text-gray-900">
               Features
-            </Link>
-            <Link to="/#pricing" className="text-gray-600 hover:text-gray-900">
+            </a>
+            <a href="#pricing" className="text-gray-600 hover:text-gray-900">
               Pricing
-            </Link>
-            <Link to="/#how-it-works" className="text-gray-600 hover:text-gray-900">
+            </a>
+            <a href="#how-it-works" className="text-gray-600 hover:text-gray-900">
               How it works
-            </Link>
+            </a>
             <Link to="/login" className="text-gray-600 hover:text-gray-900">
               Login
             </Link>

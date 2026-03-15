@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router";
-
+import sabiLogo from "../assets/sabi-logo.png";
 import {
   LayoutDashboard,
   CreditCard,
@@ -53,7 +53,8 @@ export function Sidebar({ isOpen = true, onClose, isAdmin = false }: SidebarProp
       >
         <div className="p-6 border-b flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg"></div>
+            {/* <div className="w-8 h-8 bg-indigo-600 rounded-lg"></div> */}
+            <img src={sabiLogo} alt="SabiCard" className="w-5 h-5 object-contain" />
             <span className="font-semibold text-xl">SabiCard</span>
           </Link>
           {onClose && (

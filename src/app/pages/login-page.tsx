@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { getPendingCardUid, clearPendingCardUid } from "../lib/card-session";
 import { activateCard } from "../lib/card-service";
+import sabiLogo from "../assets/sabi-logo.png";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -51,7 +52,8 @@ export function LoginPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-indigo-600 rounded-lg"></div>
+            {/* <div className="w-10 h-10 bg-indigo-600 rounded-lg"></div> */}
+             <img src={sabiLogo} alt="SabiCard" className="w-10 h-10 object-contain" />
             <span className="font-semibold text-2xl">SabiCard</span>
           </Link>
           <h1 className="text-3xl font-bold mb-2">Welcome back</h1>

@@ -3,7 +3,7 @@ import { Navbar } from "../components/navbar";
 import { Footer } from "../components/footer";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import sabiBanner from "../assets/sabi_banner.jpg";
-import sabiLogo from "../assets/sabi-logo.jpg";
+import sabiLogo from "../assets/sabi-logo.png";
 
 import {
   Zap,
