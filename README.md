@@ -1,7 +1,7 @@
 
-  # Create app design
+  # SabiCard
 
-  This is a code bundle for Create app design. The original project is available at https://www.figma.com/design/ZVaxAbgySUX2cT9dm4vvmF/Create-app-design.
+  This is a code bundle for SabiCard. The original project is available at https://www.figma.com/design/ZVaxAbgySUX2cT9dm4vvmF/Create-app-design.
 
   ## Running the code
 
