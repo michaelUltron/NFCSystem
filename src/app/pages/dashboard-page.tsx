@@ -13,6 +13,7 @@ import {
   Shield,
   ShieldOff,
   Star,
+  BadgeCheck,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import {
@@ -26,6 +27,14 @@ import {
   unblockMyCard,
 } from "../lib/card-management-service";
 import { getMyTapCount } from "../lib/analytics-service";
+import { getMyLeadCount } from "../lib/lead-service";
+import {
+  getMySubscription,
+  canUseAnalytics,
+  canUseLeads,
+  getPlanCardLimit,
+  getPlanLabel,
+} from "../lib/subscription-service";
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -36,6 +45,8 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [totalTaps, setTotalTaps] = useState(0);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [plan, setPlan] = useState("free");
 
   const loadDashboard = async () => {
     const {
@@ -47,15 +58,20 @@ export function DashboardPage() {
       return;
     }
 
-    const [cardData, profileData, tapCount] = await Promise.all([
-      getMyCards(),
-      getCurrentUserProfile(),
-      getMyTapCount(),
-    ]);
+    const [cardData, profileData, tapCount, leadCount, subscription] =
+      await Promise.all([
+        getMyCards(),
+        getCurrentUserProfile(),
+        getMyTapCount(),
+        getMyLeadCount(),
+        getMySubscription(),
+      ]);
 
     setCards(cardData);
     setProfile(profileData);
     setTotalTaps(tapCount);
+    setTotalLeads(leadCount);
+    setPlan(subscription?.plan || "free");
   };
 
   useEffect(() => {
@@ -133,6 +149,7 @@ export function DashboardPage() {
   );
 
   const previewUsername = profile?.username || "your-username";
+  const cardLimit = getPlanCardLimit(plan);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -142,13 +159,20 @@ export function DashboardPage() {
         <TopNavbar onMenuClick={() => setSidebarOpen(true)} />
 
         <main className="flex-1 p-6">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-            <p className="text-gray-600">
-              Welcome back
-              {profile?.full_name ? `, ${profile.full_name}` : ""}! Here&apos;s your
-              SabiCard account overview.
-            </p>
+          <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+              <p className="text-gray-600">
+                Welcome back
+                {profile?.full_name ? `, ${profile.full_name}` : ""}! Here&apos;s your
+                SabiCard account overview.
+              </p>
+            </div>
+
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium">
+              <BadgeCheck className="w-4 h-4" />
+              {getPlanLabel(plan)} Plan
+            </div>
           </div>
 
           {loading ? (
@@ -160,7 +184,9 @@ export function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <DashboardCard
                   title="My Cards"
-                  value={String(totalCards)}
+                  value={
+                    cardLimit ? `${totalCards}/${cardLimit}` : String(totalCards)
+                  }
                   icon={CreditCard}
                   trend={`${activeCards} active`}
                   trendUp={true}
@@ -174,19 +200,38 @@ export function DashboardPage() {
                 />
                 <DashboardCard
                   title="Total Taps"
-                  value={String(totalTaps)}
+                  value={canUseAnalytics(plan) ? String(totalTaps) : "—"}
                   icon={MousePointerClick}
-                  trend="Card opens tracked"
-                  trendUp={true}
+                  trend={
+                    canUseAnalytics(plan)
+                      ? "Card opens tracked"
+                      : "Upgrade for analytics"
+                  }
+                  trendUp={canUseAnalytics(plan)}
                 />
                 <DashboardCard
                   title="Leads Captured"
-                  value="0"
+                  value={canUseLeads(plan) ? String(totalLeads) : "—"}
                   icon={Users}
-                  trend="Coming soon"
-                  trendUp={true}
+                  trend={
+                    canUseLeads(plan)
+                      ? totalLeads > 0
+                        ? "New contacts collected"
+                        : "No leads yet"
+                      : "Upgrade for lead capture"
+                  }
+                  trendUp={canUseLeads(plan) && totalLeads > 0}
                 />
               </div>
+
+              {plan === "free" ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8">
+                  <p className="text-sm text-amber-800">
+                    You are on the Free plan. Free includes 1 active card only.
+                    Upgrade to Pro to unlock multiple cards, leads, analytics, and themes.
+                  </p>
+                </div>
+              ) : null}
 
               <div className="bg-white rounded-xl shadow-md p-6 mb-8">
                 <h2 className="text-xl font-semibold mb-4">My Cards</h2>
@@ -363,11 +408,19 @@ export function DashboardPage() {
                     <strong>Username:</strong> {profile?.username || "Not set yet"}
                   </p>
                   <p>
+                    <strong>Plan:</strong> {getPlanLabel(plan)}
+                  </p>
+                  <p>
                     <strong>Primary Card:</strong>{" "}
                     {primaryCard ? primaryCard.card_uid : "No primary card set"}
                   </p>
                   <p>
-                    <strong>Total Taps:</strong> {totalTaps}
+                    <strong>Total Taps:</strong>{" "}
+                    {canUseAnalytics(plan) ? totalTaps : "Upgrade required"}
+                  </p>
+                  <p>
+                    <strong>Total Leads:</strong>{" "}
+                    {canUseLeads(plan) ? totalLeads : "Upgrade required"}
                   </p>
                 </div>
               </div>

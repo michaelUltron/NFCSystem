@@ -46,3 +46,12 @@ export async function getMyLeads() {
   if (error) throw error;
   return (data ?? []) as LeadRow[];
 }
+
+export async function getMyLeadCount() {
+  const { count, error } = await supabase
+    .from("leads")
+    .select("*", { count: "exact", head: true });
+
+  if (error) throw error;
+  return count ?? 0;
+}

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { buildTapUrl } from "./app-config";
 
 export type AdminCardRow = {
   id: string;
@@ -44,5 +45,5 @@ export function generateCardUid() {
 }
 
 export function getTapUrl(cardUid: string) {
-  return `${window.location.origin}/tap?uid=${encodeURIComponent(cardUid)}`;
+  return buildTapUrl(cardUid);
 }

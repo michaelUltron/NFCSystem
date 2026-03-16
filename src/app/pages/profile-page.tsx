@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { Sidebar } from "../components/sidebar";
 import { TopNavbar } from "../components/top-navbar";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { buildPublicCardUrl } from "../lib/app-config";
 import {
   User,
   Building2,

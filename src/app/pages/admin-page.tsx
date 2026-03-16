@@ -9,7 +9,20 @@ import {
   getTapUrl,
   type AdminCardRow,
 } from "../lib/admin-service";
-import { Copy, CreditCard, Plus, RefreshCw, Download, Search } from "lucide-react";
+import {
+  adminListUserSubscriptions,
+  adminUpdateUserSubscription,
+  type AdminUserSubscriptionRow,
+} from "../lib/admin-subscription-service";
+import {
+  Copy,
+  CreditCard,
+  Plus,
+  RefreshCw,
+  Download,
+  Search,
+  BadgeCheck,
+} from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
@@ -37,14 +50,21 @@ export function AdminPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
   const [cards, setCards] = useState<AdminCardRow[]>([]);
+  const [users, setUsers] = useState<AdminUserSubscriptionRow[]>([]);
+
   const [cardUid, setCardUid] = useState(generateCardUid());
   const [cardType, setCardType] = useState("standard");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [activatedFrom, setActivatedFrom] = useState("");
   const [activatedTo, setActivatedTo] = useState("");
+
+  const [userSearch, setUserSearch] = useState("");
   const [creating, setCreating] = useState(false);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -54,11 +74,17 @@ export function AdminPage() {
 
     if (!admin) {
       setCards([]);
+      setUsers([]);
       return;
     }
 
-    const data = await adminListCards();
-    setCards(data);
+    const [cardData, userData] = await Promise.all([
+      adminListCards(),
+      adminListUserSubscriptions(),
+    ]);
+
+    setCards(cardData);
+    setUsers(userData);
   };
 
   useEffect(() => {
@@ -110,6 +136,20 @@ export function AdminPage() {
       return matchesStatus && matchesSearch && matchesDate;
     });
   }, [cards, statusFilter, searchTerm, activatedFrom, activatedTo]);
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return users;
+
+    return users.filter((user) => {
+      return (
+        (user.email || "").toLowerCase().includes(q) ||
+        (user.full_name || "").toLowerCase().includes(q) ||
+        (user.username || "").toLowerCase().includes(q) ||
+        (user.plan || "").toLowerCase().includes(q)
+      );
+    });
+  }, [users, userSearch]);
 
   const inactiveCount = useMemo(
     () => cards.filter((card) => card.status === "inactive").length,
@@ -224,6 +264,25 @@ export function AdminPage() {
     }
   };
 
+  const handleUpdatePlan = async (
+    userId: string,
+    plan: "free" | "pro" | "business"
+  ) => {
+    try {
+      setUpdatingUserId(userId);
+      setError("");
+      setSuccess("");
+
+      await adminUpdateUserSubscription(userId, plan, "active");
+      setSuccess("Subscription updated successfully.");
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || "Failed to update subscription.");
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -235,7 +294,7 @@ export function AdminPage() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Admin Inventory</h1>
             <p className="text-gray-600">
-              Create and manage SabiCard inventory before selling
+              Manage SabiCard inventory and user subscriptions
             </p>
           </div>
 
@@ -252,6 +311,21 @@ export function AdminPage() {
             </div>
           ) : (
             <>
+              {(error || success) && (
+                <div className="mb-6">
+                  {error ? (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                      {error}
+                    </div>
+                  ) : null}
+                  {success ? (
+                    <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                      {success}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <p className="text-sm text-gray-500 mb-1">Inactive Cards</p>
@@ -279,18 +353,6 @@ export function AdminPage() {
                     Generate UID
                   </button>
                 </div>
-
-                {error ? (
-                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 mb-4">
-                    {error}
-                  </div>
-                ) : null}
-
-                {success ? (
-                  <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700 mb-4">
-                    {success}
-                  </div>
-                ) : null}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -331,7 +393,7 @@ export function AdminPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="bg-white rounded-xl shadow-md p-6 mb-8">
                 <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
                   <h2 className="text-xl font-semibold">Card Inventory</h2>
 
@@ -468,6 +530,99 @@ export function AdminPage() {
                             >
                               <Copy className="w-4 h-4" />
                               Copy Tap URL
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+                  <h2 className="text-xl font-semibold">User Subscriptions</h2>
+                </div>
+
+                <div className="mb-4">
+                  <div className="relative max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Search email, name, username, plan..."
+                      className="border rounded-lg px-3 py-2 pl-10 w-full"
+                    />
+                  </div>
+                </div>
+
+                {filteredUsers.length === 0 ? (
+                  <p className="text-gray-600">No users found.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredUsers.map((user) => (
+                      <div key={user.user_id} className="border rounded-xl p-4">
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold">
+                                {user.full_name || "Unnamed User"}
+                              </h3>
+                              {user.is_admin ? (
+                                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                                  <BadgeCheck className="w-3 h-3" />
+                                  Admin
+                                </span>
+                              ) : null}
+                            </div>
+
+                            <p className="text-sm text-gray-600">
+                              <strong>Email:</strong> {user.email || "No email"}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <strong>Username:</strong> {user.username || "—"}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <strong>Plan:</strong> {user.plan || "free"}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <strong>Status:</strong> {user.status || "active"}
+                            </p>
+                          </div>
+
+                          <div className="flex gap-2 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleUpdatePlan(user.user_id, "free")
+                              }
+                              disabled={updatingUserId === user.user_id}
+                              className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+                            >
+                              Set Free
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleUpdatePlan(user.user_id, "pro")
+                              }
+                              disabled={updatingUserId === user.user_id}
+                              className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+                            >
+                              Set Pro
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleUpdatePlan(user.user_id, "business")
+                              }
+                              disabled={updatingUserId === user.user_id}
+                              className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+                            >
+                              Set Business
                             </button>
                           </div>
                         </div>

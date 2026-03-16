@@ -11,6 +11,7 @@ import { ActivationPage } from "./pages/activation-page";
 import { TapPage } from "./pages/tap-page";
 import { LeadsPage } from "./pages/leads-page";
 import { SettingsPage } from "./pages/settings-page";
+import { PlansPage } from "./pages/plans-page";
 
 export const router = createBrowserRouter([
   {
@@ -61,4 +62,8 @@ export const router = createBrowserRouter([
     path: "/activate",
     Component: ActivationPage,
   },
+  {
+  path: "/plans",
+  Component: PlansPage,
+},
 ]);

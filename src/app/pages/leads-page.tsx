@@ -2,15 +2,34 @@ import { useEffect, useState } from "react";
 import { Sidebar } from "../components/sidebar";
 import { TopNavbar } from "../components/top-navbar";
 import { getMyLeads, type LeadRow } from "../lib/lead-service";
+import {
+  getMySubscription,
+  canUseLeads,
+  getPlanLabel,
+} from "../lib/subscription-service";
 
 export function LeadsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [plan, setPlan] = useState("free");
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       try {
+        const subscription = await getMySubscription();
+        const currentPlan = subscription?.plan || "free";
+
+        setPlan(currentPlan);
+
+        if (!canUseLeads(currentPlan)) {
+          setAllowed(false);
+          return;
+        }
+
+        setAllowed(true);
+
         const data = await getMyLeads();
         setLeads(data);
       } catch (error) {
@@ -33,12 +52,24 @@ export function LeadsPage() {
         <main className="flex-1 p-6">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Leads</h1>
-            <p className="text-gray-600">Contacts collected from your digital card</p>
+            <p className="text-gray-600">
+              Contacts collected from your digital card
+            </p>
           </div>
 
           <div className="bg-white rounded-xl shadow-md p-6">
             {loading ? (
               <p>Loading leads...</p>
+            ) : !allowed ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <h2 className="font-semibold text-amber-800 mb-2">
+                  Upgrade required
+                </h2>
+                <p className="text-sm text-amber-700">
+                  Leads are available on Pro and Business plans. Your current plan
+                  is <strong>{getPlanLabel(plan)}</strong>.
+                </p>
+              </div>
             ) : leads.length === 0 ? (
               <p className="text-gray-600">No leads yet.</p>
             ) : (
@@ -47,14 +78,29 @@ export function LeadsPage() {
                   <div key={lead.id} className="border rounded-xl p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h3 className="font-semibold">{lead.name || "Unnamed Lead"}</h3>
-                        <p className="text-sm text-gray-600">{lead.email || "No email"}</p>
-                        {lead.phone ? <p className="text-sm text-gray-600">{lead.phone}</p> : null}
-                        {lead.company ? <p className="text-sm text-gray-600">{lead.company}</p> : null}
-                        {lead.message ? <p className="text-sm text-gray-700 mt-2">{lead.message}</p> : null}
+                        <h3 className="font-semibold">
+                          {lead.name || "Unnamed Lead"}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {lead.email || "No email"}
+                        </p>
+                        {lead.phone ? (
+                          <p className="text-sm text-gray-600">{lead.phone}</p>
+                        ) : null}
+                        {lead.company ? (
+                          <p className="text-sm text-gray-600">{lead.company}</p>
+                        ) : null}
+                        {lead.message ? (
+                          <p className="text-sm text-gray-700 mt-2">
+                            {lead.message}
+                          </p>
+                        ) : null}
                       </div>
+
                       <div className="text-xs text-gray-500">
-                        {lead.created_at ? new Date(lead.created_at).toLocaleString() : ""}
+                        {lead.created_at
+                          ? new Date(lead.created_at).toLocaleString()
+                          : ""}
                       </div>
                     </div>
                   </div>
