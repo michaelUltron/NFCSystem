@@ -33,7 +33,7 @@ export function OrderPage() {
   const [city, setCity] = useState("");
   const [province, setProvince] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [country, setCountry] = useState("Philippines");
+  const [country, setCountry] = useState("PH");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -265,7 +265,7 @@ export function OrderPage() {
                       className="border rounded-lg px-3 py-2 w-full"
                     />
                     <input
-                      type="text"
+                      type="hidden"
                       placeholder="Country"
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
