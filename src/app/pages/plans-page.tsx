@@ -1,88 +1,124 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "../components/sidebar";
 import { TopNavbar } from "../components/top-navbar";
-import {
-  getMySubscription,
-  getPlanLabel,
-} from "../lib/subscription-service";
-import { BadgeCheck, CheckCircle, CreditCard } from "lucide-react";
+import { getMySubscription, getPlanLabel } from "../lib/subscription-service";
+import { BadgeCheck, CheckCircle, CreditCard, Info } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type PlanKey = "free" | "pro" | "business";
 
-const plans: {
+type PlanSettingRow = {
+  id: string;
+  plan: PlanKey;
+  name: string;
+  price: number;
+  currency: string;
+  paymongo_amount: number;
+  is_active: boolean;
+};
+
+type PlanCard = {
   key: PlanKey;
   title: string;
-  price: string;
+  priceLabel: string;
   subtitle: string;
   features: string[];
   popular?: boolean;
-}[] = [
-  {
-    key: "free",
-    title: "Free",
-    price: "₱0",
-    subtitle: "Good for getting started",
-    features: [
-      "1 active card",
-      "Basic public card",
-      "No analytics",
-      "No lead capture",
-      "No theme customization",
-    ],
-  },
-  {
-    key: "pro",
-    title: "Pro",
-    price: "₱12",
-    subtitle: "Best for individual professionals",
-    popular: true,
-    features: [
-      "Unlimited active cards",
-      "Tap analytics",
-      "Lead capture",
-      "Theme customization",
-      "Priority growth features",
-    ],
-  },
-  {
-    key: "business",
-    title: "Business",
-    price: "₱49",
-    subtitle: "For teams and scaling use",
-    features: [
-      "Everything in Pro",
-      "Unlimited active cards",
-      "Lead capture",
-      "Analytics",
-      "Ready for team tools later",
-    ],
-  },
-];
+  isActive: boolean;
+};
 
 export function PlansPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentPlan, setCurrentPlan] = useState<PlanKey>("free");
   const [checkingOutPlan, setCheckingOutPlan] = useState<PlanKey | null>(null);
+  const [plans, setPlans] = useState<PlanCard[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const loadPlan = async () => {
-    const subscription = await getMySubscription();
+  const loadPage = async () => {
+    const [subscription, planRows] = await Promise.all([
+      getMySubscription(),
+      supabase
+        .from("plan_settings")
+        .select("id, plan, name, price, currency, paymongo_amount, is_active")
+        .order("price", { ascending: true }),
+    ]);
+
     setCurrentPlan((subscription?.plan as PlanKey) || "free");
+
+    if (planRows.error) {
+      throw planRows.error;
+    }
+
+    const settings = (planRows.data ?? []) as PlanSettingRow[];
+
+    const settingsMap = new Map(settings.map((row) => [row.plan, row]));
+
+    const builtPlans: PlanCard[] = [
+      {
+        key: "free",
+        title: settingsMap.get("free")?.name || "Free",
+        priceLabel:
+          Number(settingsMap.get("free")?.price || 0) === 0
+            ? "₱0"
+            : `₱${settingsMap.get("free")?.price ?? 0}`,
+        subtitle: "Good for getting started",
+        features: [
+          "1 active card",
+          "Basic public card",
+          "No analytics",
+          "No lead capture",
+          "No theme customization",
+        ],
+        isActive: settingsMap.get("free")?.is_active ?? true,
+      },
+      {
+        key: "pro",
+        title: settingsMap.get("pro")?.name || "Pro",
+        priceLabel: `₱${settingsMap.get("pro")?.price ?? 0}`,
+        subtitle: "Best for individual professionals",
+        popular: true,
+        features: [
+          "Unlimited active cards",
+          "Tap analytics",
+          "Lead capture",
+          "Theme customization",
+          "Priority growth features",
+        ],
+        isActive: settingsMap.get("pro")?.is_active ?? true,
+      },
+      {
+        key: "business",
+        title: settingsMap.get("business")?.name || "Business",
+        priceLabel: `₱${settingsMap.get("business")?.price ?? 0}`,
+        subtitle: "For teams and scaling use",
+        features: [
+          "Everything in Pro",
+          "Unlimited active cards",
+          "Lead capture",
+          "Analytics",
+          "Ready for team tools later",
+        ],
+        isActive: settingsMap.get("business")?.is_active ?? true,
+      },
+    ];
+
+    setPlans(builtPlans);
   };
 
   useEffect(() => {
     const run = async () => {
       try {
-        await loadPlan();
+        await loadPage();
 
         const params = new URLSearchParams(window.location.search);
         const payment = params.get("payment");
 
         if (payment === "success") {
-          setSuccess("Payment completed. Your subscription will update shortly.");
+          setSuccess(
+            "Payment completed. Your subscription will update shortly."
+          );
         } else if (payment === "cancelled") {
           setError("Payment was cancelled.");
         }
@@ -176,6 +212,24 @@ export function PlansPage() {
             </div>
           ) : null}
 
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-8">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-900">
+                <p className="font-semibold mb-1">Payment Information</p>
+                <p>
+                  Pro and Business plans are currently charged as a
+                  <strong> one-time payment for 30 days of access</strong>.
+                  There is <strong>no automatic monthly charge yet</strong>.
+                </p>
+                <p className="mt-1">
+                  When your billing period ends, you may renew again through the
+                  Plans page.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {loading ? (
             <div className="bg-white rounded-xl shadow-md p-6">
               <p>Loading plans...</p>
@@ -194,7 +248,7 @@ export function PlansPage() {
                       plan.popular
                         ? "bg-indigo-600 text-white border-indigo-600"
                         : "bg-white border-gray-200"
-                    }`}
+                    } ${!plan.isActive ? "opacity-60" : ""}`}
                   >
                     {plan.popular ? (
                       <div className="text-center mb-3">
@@ -214,13 +268,15 @@ export function PlansPage() {
                     </div>
 
                     <div className="mb-2">
-                      <span className="text-4xl font-bold">{plan.price}</span>
+                      <span className="text-4xl font-bold">
+                        {plan.priceLabel}
+                      </span>
                       <span
                         className={`ml-1 ${
                           plan.popular ? "text-indigo-100" : "text-gray-600"
                         }`}
                       >
-                        /month
+                        {plan.key === "free" ? "" : "/30 days"}
                       </span>
                     </div>
 
@@ -241,7 +297,19 @@ export function PlansPage() {
                       ))}
                     </ul>
 
-                    {isCurrent ? (
+                    {!plan.isActive ? (
+                      <button
+                        type="button"
+                        disabled
+                        className={`w-full rounded-lg px-6 py-3 font-medium cursor-not-allowed ${
+                          plan.popular
+                            ? "bg-white text-indigo-600"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        Currently Unavailable
+                      </button>
+                    ) : isCurrent ? (
                       <button
                         type="button"
                         disabled
@@ -282,10 +350,11 @@ export function PlansPage() {
           )}
 
           <div className="mt-8 bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-3">Payment Methods</h2>
+            <h2 className="text-xl font-semibold mb-3">Accepted Payments</h2>
             <p className="text-sm text-gray-600">
-              Checkout is powered by PayMongo. Available payment methods depend on
-              your PayMongo account and checkout configuration.
+              Checkout is powered by PayMongo. Available payment methods depend
+              on your PayMongo account and checkout configuration, such as cards,
+              GCash, Maya, QR Ph, and other supported channels.
             </p>
           </div>
         </main>
