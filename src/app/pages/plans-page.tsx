@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { Sidebar } from "../components/sidebar";
 import { TopNavbar } from "../components/top-navbar";
 import {
-  changeMySubscriptionPlan,
   getMySubscription,
   getPlanLabel,
 } from "../lib/subscription-service";
 import { BadgeCheck, CheckCircle, CreditCard } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 type PlanKey = "free" | "pro" | "business";
 
@@ -21,7 +21,7 @@ const plans: {
   {
     key: "free",
     title: "Free",
-    price: "$0",
+    price: "₱0",
     subtitle: "Good for getting started",
     features: [
       "1 active card",
@@ -34,7 +34,7 @@ const plans: {
   {
     key: "pro",
     title: "Pro",
-    price: "$12",
+    price: "₱12",
     subtitle: "Best for individual professionals",
     popular: true,
     features: [
@@ -48,7 +48,7 @@ const plans: {
   {
     key: "business",
     title: "Business",
-    price: "$49",
+    price: "₱49",
     subtitle: "For teams and scaling use",
     features: [
       "Everything in Pro",
@@ -64,7 +64,7 @@ export function PlansPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentPlan, setCurrentPlan] = useState<PlanKey>("free");
-  const [updatingPlan, setUpdatingPlan] = useState<PlanKey | null>(null);
+  const [checkingOutPlan, setCheckingOutPlan] = useState<PlanKey | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -77,6 +77,15 @@ export function PlansPage() {
     const run = async () => {
       try {
         await loadPlan();
+
+        const params = new URLSearchParams(window.location.search);
+        const payment = params.get("payment");
+
+        if (payment === "success") {
+          setSuccess("Payment completed. Your subscription will update shortly.");
+        } else if (payment === "cancelled") {
+          setError("Payment was cancelled.");
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load plans.");
       } finally {
@@ -87,20 +96,47 @@ export function PlansPage() {
     run();
   }, []);
 
-  const handleChangePlan = async (plan: PlanKey) => {
+  const handleCheckout = async (plan: Exclude<PlanKey, "free">) => {
     try {
-      setUpdatingPlan(plan);
+      setCheckingOutPlan(plan);
       setError("");
       setSuccess("");
 
-      await changeMySubscriptionPlan(plan);
-      await loadPlan();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      setSuccess(`Your plan has been changed to ${getPlanLabel(plan)}.`);
+      if (!user) {
+        throw new Error("You must be logged in.");
+      }
+
+      const response = await fetch("/api/paymongo/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plan,
+          userId: user.id,
+          email: user.email,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || "Failed to create checkout session.");
+      }
+
+      if (!result.checkoutUrl) {
+        throw new Error("No checkout URL returned.");
+      }
+
+      window.location.href = result.checkoutUrl;
     } catch (err: any) {
-      setError(err.message || "Failed to change plan.");
+      setError(err.message || "Failed to start checkout.");
     } finally {
-      setUpdatingPlan(null);
+      setCheckingOutPlan(null);
     }
   };
 
@@ -148,7 +184,8 @@ export function PlansPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {plans.map((plan) => {
                 const isCurrent = currentPlan === plan.key;
-                const isUpdating = updatingPlan === plan.key;
+                const isPaidPlan = plan.key === "pro" || plan.key === "business";
+                const isCheckingOut = checkingOutPlan === plan.key;
 
                 return (
                   <div
@@ -216,22 +253,26 @@ export function PlansPage() {
                       >
                         Current Plan
                       </button>
+                    ) : plan.key === "free" ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full rounded-lg px-6 py-3 font-medium bg-gray-100 text-gray-500 cursor-not-allowed"
+                      >
+                        Contact admin to downgrade
+                      </button>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => handleChangePlan(plan.key)}
-                        disabled={isUpdating}
+                        onClick={() => handleCheckout(plan.key)}
+                        disabled={isCheckingOut}
                         className={`w-full rounded-lg px-6 py-3 font-medium ${
                           plan.popular
                             ? "bg-white text-indigo-600 hover:bg-gray-100"
                             : "bg-indigo-600 text-white hover:bg-indigo-700"
                         } disabled:opacity-60`}
                       >
-                        {isUpdating
-                          ? "Updating..."
-                          : plan.key === "free"
-                          ? "Switch to Free"
-                          : `Choose ${plan.title}`}
+                        {isCheckingOut ? "Redirecting..." : `Choose ${plan.title}`}
                       </button>
                     )}
                   </div>
@@ -241,11 +282,10 @@ export function PlansPage() {
           )}
 
           <div className="mt-8 bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-3">Important Note</h2>
+            <h2 className="text-xl font-semibold mb-3">Payment Methods</h2>
             <p className="text-sm text-gray-600">
-              This is currently a temporary in-app plan switcher for development
-              and testing. Later, this page can be connected to Stripe or another
-              billing provider for real payments and subscription checkout.
+              Checkout is powered by PayMongo. Available payment methods depend on
+              your PayMongo account and checkout configuration.
             </p>
           </div>
         </main>
