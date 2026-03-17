@@ -11,12 +11,12 @@ const PLAN_CONFIG: Record<
 > = {
   pro: {
     name: "SabiCard Pro",
-    amount: 1200, // PHP 12.00 if centavos, adjust to your actual price
+    amount: 1000, // PHP 12.00 if centavos, adjust to your actual price
     description: "Pro monthly access for SabiCard",
   },
   business: {
     name: "SabiCard Business",
-    amount: 4900, // PHP 49.00 if centavos, adjust to your actual price
+    amount: 999900, // PHP 49.00 if centavos, adjust to your actual price
     description: "Business monthly access for SabiCard",
   },
 };
@@ -88,6 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           metadata: {
             user_id: userId,
             plan,
+            source: "sabicard_checkout",
           },
         },
       },
