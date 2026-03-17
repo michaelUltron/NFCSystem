@@ -208,7 +208,7 @@ export function LandingPage() {
               </Link>
 
               <a
-                href="#pricing"
+                href="/order"
                 className="border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-6 py-3 text-center"
               >
                 Buy NFC Card

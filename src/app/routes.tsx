@@ -12,6 +12,8 @@ import { TapPage } from "./pages/tap-page";
 import { LeadsPage } from "./pages/leads-page";
 import { SettingsPage } from "./pages/settings-page";
 import { PlansPage } from "./pages/plans-page";
+import { OrderPage } from "./pages/order-page";
+import { AdminOrdersPage } from "./pages/admin-orders-page";
 
 export const router = createBrowserRouter([
   {
@@ -65,5 +67,13 @@ export const router = createBrowserRouter([
   {
   path: "/plans",
   Component: PlansPage,
+},
+{
+  path: "/order",
+  Component: OrderPage,
+},
+{
+  path: "/admin/orders",
+  Component: AdminOrdersPage,
 },
 ]);
