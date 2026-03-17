@@ -7,6 +7,7 @@ import {
   Settings,
   Shield,
   CreditCard,
+  Package,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import sabiLogo from "../assets/sabi-logo.png";
@@ -60,6 +61,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       visible: true,
     },
     {
+      label: "Plans",
+      href: "/plans",
+      icon: CreditCard,
+      visible: true,
+    },
+    {
       label: "Leads",
       href: "/leads",
       icon: Users,
@@ -78,18 +85,30 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       visible: isAdmin,
     },
     {
+      label: "Admin Orders",
+      href: "/admin/orders",
+      icon: Package,
+      visible: isAdmin,
+    },
+    {
       label: "Settings",
       href: "/settings",
       icon: Settings,
       visible: true,
     },
-    {
-  label: "Plans",
-  href: "/plans",
-  icon: CreditCard,
-  visible: true,
-},
   ];
+
+  const isActive = (href: string) => {
+    if (href === "/admin") {
+      return location.pathname === "/admin";
+    }
+
+    if (href === "/admin/orders") {
+      return location.pathname === "/admin/orders";
+    }
+
+    return location.pathname === href;
+  };
 
   return (
     <>
@@ -121,7 +140,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             .filter((item) => item.visible)
             .map((item) => {
               const Icon = item.icon;
-              const active = location.pathname === item.href;
+              const active = isActive(item.href);
 
               return (
                 <Link

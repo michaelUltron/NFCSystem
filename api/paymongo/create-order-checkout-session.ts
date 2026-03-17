@@ -134,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       city,
       province_state: province,
       postal_code: postalCode,
-      country: country || "Philippines",
+      country: country || "PH",
       notes: notes || null,
       quantity: qty,
       card_type: cardType,

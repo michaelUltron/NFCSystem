@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { Sidebar } from "../components/sidebar";
 import { TopNavbar } from "../components/top-navbar";
 import {
@@ -22,6 +23,7 @@ import {
   Download,
   Search,
   BadgeCheck,
+  Package,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -291,11 +293,21 @@ export function AdminPage() {
         <TopNavbar onMenuClick={() => setSidebarOpen(true)} />
 
         <main className="flex-1 p-6">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Admin Inventory</h1>
-            <p className="text-gray-600">
-              Manage SabiCard inventory and user subscriptions
-            </p>
+          <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
+              <p className="text-gray-600">
+                Manage card inventory, subscriptions, and admin tools.
+              </p>
+            </div>
+
+            <Link
+              to="/admin/orders"
+              className="inline-flex items-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-3"
+            >
+              <Package className="w-4 h-4" />
+              Go to Admin Orders
+            </Link>
           </div>
 
           {loading ? (
@@ -304,7 +316,9 @@ export function AdminPage() {
             </div>
           ) : !isAdmin ? (
             <div className="bg-white rounded-xl shadow-md p-6">
-              <p className="text-red-600 font-medium">You do not have admin access.</p>
+              <p className="text-red-600 font-medium">
+                You do not have admin access.
+              </p>
               <p className="text-sm text-gray-600 mt-2">
                 Set your profile is_admin = true in Supabase to use this page.
               </p>
@@ -356,7 +370,9 @@ export function AdminPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Card UID</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Card UID
+                    </label>
                     <input
                       type="text"
                       value={cardUid}
@@ -367,7 +383,9 @@ export function AdminPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Card Type</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Card Type
+                    </label>
                     <select
                       value={cardType}
                       onChange={(e) => setCardType(e.target.value)}
@@ -423,7 +441,9 @@ export function AdminPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Search</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Search
+                    </label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
@@ -488,7 +508,8 @@ export function AdminPage() {
                             </div>
 
                             <p className="text-sm text-gray-600">
-                              <strong>Type:</strong> {card.card_type || "standard"}
+                              <strong>Type:</strong>{" "}
+                              {card.card_type || "standard"}
                             </p>
 
                             <p className="text-sm text-gray-600 break-all">
@@ -517,7 +538,8 @@ export function AdminPage() {
 
                             {card.blocked_reason ? (
                               <p className="text-sm text-gray-600">
-                                <strong>Blocked Reason:</strong> {card.blocked_reason}
+                                <strong>Blocked Reason:</strong>{" "}
+                                {card.blocked_reason}
                               </p>
                             ) : null}
                           </div>
