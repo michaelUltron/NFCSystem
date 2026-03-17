@@ -207,12 +207,12 @@ export function LandingPage() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
 
-              <a
+              {/* <a
                 href="/order"
                 className="border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-6 py-3 text-center"
               >
                 Buy NFC Card
-              </a>
+              </a> */}
             </div>
           </div>
 
