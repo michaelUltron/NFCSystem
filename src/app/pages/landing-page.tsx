@@ -1,9 +1,11 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Navbar } from "../components/navbar";
 import { Footer } from "../components/footer";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import sabiBanner from "../assets/sabi_banner.jpg";
 import sabiLogo from "../assets/sabi-logo.png";
+import { supabase } from "../lib/supabase";
 
 import {
   Zap,
@@ -13,9 +15,159 @@ import {
   Share2,
   CheckCircle,
   ArrowRight,
+  Info,
 } from "lucide-react";
 
+type PlanSettingRow = {
+  id: string;
+  plan: "free" | "pro" | "business";
+  name: string;
+  price: number;
+  currency: string;
+  paymongo_amount: number;
+  is_active: boolean;
+};
+
+type LandingPlan = {
+  key: "free" | "pro" | "business";
+  title: string;
+  priceLabel: string;
+  suffix: string;
+  features: string[];
+  buttonLabel: string;
+  popular?: boolean;
+  isActive: boolean;
+};
+
 export function LandingPage() {
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const [plans, setPlans] = useState<LandingPlan[]>([]);
+
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("plan_settings")
+          .select("id, plan, name, price, currency, paymongo_amount, is_active")
+          .order("price", { ascending: true });
+
+        if (error) throw error;
+
+        const rows = (data ?? []) as PlanSettingRow[];
+        const settingsMap = new Map(rows.map((row) => [row.plan, row]));
+
+        const builtPlans: LandingPlan[] = [
+          {
+            key: "free",
+            title: settingsMap.get("free")?.name || "Free",
+            priceLabel:
+              Number(settingsMap.get("free")?.price || 0) === 0
+                ? "₱0"
+                : `₱${settingsMap.get("free")?.price ?? 0}`,
+            suffix: "",
+            features: [
+              "1 Digital Card",
+              "Basic card experience",
+              "No analytics",
+              "No lead capture",
+              "No theme customization",
+            ],
+            buttonLabel: "Get Started",
+            isActive: settingsMap.get("free")?.is_active ?? true,
+          },
+          {
+            key: "pro",
+            title: settingsMap.get("pro")?.name || "Pro",
+            priceLabel: `₱${settingsMap.get("pro")?.price ?? 0}`,
+            suffix: "/30 days",
+            features: [
+              "Unlimited Digital Cards",
+              "Advanced Analytics",
+              "Lead Capture",
+              "Theme Customization",
+              "Growth-focused features",
+            ],
+            buttonLabel: "Choose Pro",
+            popular: true,
+            isActive: settingsMap.get("pro")?.is_active ?? true,
+          },
+          {
+            key: "business",
+            title: settingsMap.get("business")?.name || "Business",
+            priceLabel: `₱${settingsMap.get("business")?.price ?? 0}`,
+            suffix: "/30 days",
+            features: [
+              "Everything in Pro",
+              "Unlimited Cards",
+              "Lead Capture",
+              "Analytics",
+              "Ready for teams later",
+            ],
+            buttonLabel: "Choose Business",
+            isActive: settingsMap.get("business")?.is_active ?? true,
+          },
+        ];
+
+        setPlans(builtPlans);
+      } catch (err) {
+        setPlans([
+          {
+            key: "free",
+            title: "Free",
+            priceLabel: "₱0",
+            suffix: "",
+            features: [
+              "1 Digital Card",
+              "Basic card experience",
+              "No analytics",
+              "No lead capture",
+              "No theme customization",
+            ],
+            buttonLabel: "Get Started",
+            isActive: true,
+          },
+          {
+            key: "pro",
+            title: "Pro",
+            priceLabel: "₱12",
+            suffix: "/30 days",
+            features: [
+              "Unlimited Digital Cards",
+              "Advanced Analytics",
+              "Lead Capture",
+              "Theme Customization",
+              "Growth-focused features",
+            ],
+            buttonLabel: "Choose Pro",
+            popular: true,
+            isActive: true,
+          },
+          {
+            key: "business",
+            title: "Business",
+            priceLabel: "₱49",
+            suffix: "/30 days",
+            features: [
+              "Everything in Pro",
+              "Unlimited Cards",
+              "Lead Capture",
+              "Analytics",
+              "Ready for teams later",
+            ],
+            buttonLabel: "Choose Business",
+            isActive: true,
+          },
+        ]);
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+
+    loadPlans();
+  }, []);
+
+  const pricingPlans = useMemo(() => plans, [plans]);
+
   return (
     <div className="min-h-screen bg-white scroll-smooth">
       <Navbar />
@@ -68,7 +220,6 @@ export function LandingPage() {
             <ImageWithFallback
               src={sabiBanner}
               alt="SabiCard NFC Business Card"
-
               className="rounded-2xl shadow-2xl w-full"
             />
           </div>
@@ -187,111 +338,102 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Free Plan */}
-            <div className="bg-white rounded-xl p-8 shadow-md">
-              <h3 className="text-2xl font-bold mb-2">Free</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold">$0</span>
-                <span className="text-gray-600">/month</span>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-10 max-w-4xl mx-auto">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="text-sm text-blue-900">
+                <p className="font-semibold mb-1">Payment Clarification</p>
+                <p>
+                  Paid plans are currently charged as a
+                  <strong> one-time payment for 30 days of access</strong>.
+                  There is <strong>no automatic monthly charge yet</strong>.
+                </p>
+                <p className="mt-1">
+                  When the billing period ends, you may renew again through the
+                  Plans page inside your account.
+                </p>
               </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>1 Digital Card</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>Basic Analytics</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>Up to 100 taps/month</span>
-                </li>
-              </ul>
-              <Link
-                to="/register"
-                className="block w-full text-center border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-6 py-3"
-              >
-                Get Started
-              </Link>
-            </div>
-
-            {/* Pro Plan */}
-            <div className="bg-indigo-600 text-white rounded-xl p-8 shadow-lg transform scale-105">
-              <div className="text-center mb-2">
-                <span className="bg-white text-indigo-600 px-3 py-1 rounded-full text-sm font-semibold">
-                  POPULAR
-                </span>
-              </div>
-              <h3 className="text-2xl font-bold mb-2">Pro</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold">$12</span>
-                <span className="text-indigo-100">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>Unlimited Digital Cards</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>Advanced Analytics</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>Unlimited Taps</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>Lead Capture</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <span>Custom Branding</span>
-                </li>
-              </ul>
-              <Link
-                to="/register"
-                className="block w-full text-center bg-white text-indigo-600 hover:bg-gray-50 rounded-lg px-6 py-3"
-              >
-                Start Free Trial
-              </Link>
-            </div>
-
-            {/* Business Plan */}
-            <div className="bg-white rounded-xl p-8 shadow-md">
-              <h3 className="text-2xl font-bold mb-2">Business</h3>
-              <div className="mb-6">
-                <span className="text-4xl font-bold">$49</span>
-                <span className="text-gray-600">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>Everything in Pro</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>Team Management</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>API Access</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>Priority Support</span>
-                </li>
-              </ul>
-              <Link
-                to="/register"
-                className="block w-full text-center border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-6 py-3"
-              >
-                Contact Sales
-              </Link>
             </div>
           </div>
+
+          {loadingPlans ? (
+            <div className="bg-white rounded-xl shadow-md p-6 text-center">
+              <p>Loading pricing...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {pricingPlans.map((plan) => (
+                <div
+                  key={plan.key}
+                  className={`rounded-xl p-8 shadow-md ${
+                    plan.popular
+                      ? "bg-indigo-600 text-white shadow-lg transform scale-105"
+                      : "bg-white"
+                  } ${!plan.isActive ? "opacity-60" : ""}`}
+                >
+                  {plan.popular ? (
+                    <div className="text-center mb-2">
+                      <span className="bg-white text-indigo-600 px-3 py-1 rounded-full text-sm font-semibold">
+                        POPULAR
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <h3 className="text-2xl font-bold mb-2">{plan.title}</h3>
+                  <div className="mb-6">
+                    <span className="text-4xl font-bold">{plan.priceLabel}</span>
+                    {plan.suffix ? (
+                      <span
+                        className={
+                          plan.popular ? "text-indigo-100" : "text-gray-600"
+                        }
+                      >
+                        {plan.suffix}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <ul className="space-y-3 mb-8">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2">
+                        <CheckCircle
+                          className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                            plan.popular ? "" : "text-green-500"
+                          }`}
+                        />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {!plan.isActive ? (
+                    <button
+                      type="button"
+                      disabled
+                      className={`block w-full text-center rounded-lg px-6 py-3 cursor-not-allowed ${
+                        plan.popular
+                          ? "bg-white text-indigo-600"
+                          : "border border-gray-300 text-gray-400"
+                      }`}
+                    >
+                      Currently Unavailable
+                    </button>
+                  ) : (
+                    <Link
+                      to={plan.key === "free" ? "/register" : "/plans"}
+                      className={`block w-full text-center rounded-lg px-6 py-3 ${
+                        plan.popular
+                          ? "bg-white text-indigo-600 hover:bg-gray-50"
+                          : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {plan.buttonLabel}
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -302,8 +444,7 @@ export function LandingPage() {
             Ready to Transform Your Networking?
           </h2>
           <p className="text-xl text-gray-600 mb-8">
-            Join thousands of professionals using SabiCard to make better
-            connections
+            Join professionals using SabiCard to make better connections
           </p>
           <Link
             to="/register"

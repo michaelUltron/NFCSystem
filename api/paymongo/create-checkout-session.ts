@@ -2,27 +2,53 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const APP_URL = process.env.VITE_APP_URL || "https://www.sabicard.app";
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 type PlanKey = "pro" | "business";
 
-const PLAN_CONFIG: Record<
-  PlanKey,
-  { name: string; amount: number; description: string }
-> = {
-  pro: {
-    name: "SabiCard Pro",
-    amount: 1000, // PHP 12.00 if centavos, adjust to your actual price
-    description: "Pro monthly access for SabiCard",
-  },
-  business: {
-    name: "SabiCard Business",
-    amount: 999900, // PHP 49.00 if centavos, adjust to your actual price
-    description: "Business monthly access for SabiCard",
-  },
+type PlanSetting = {
+  id: string;
+  plan: PlanKey;
+  name: string;
+  price: number;
+  currency: string;
+  paymongo_amount: number;
+  is_active: boolean;
 };
 
 function basicAuthHeader(secretKey: string) {
   return `Basic ${Buffer.from(secretKey + ":").toString("base64")}`;
+}
+
+async function getPlanFromDB(plan: PlanKey): Promise<PlanSetting> {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Missing Supabase server env vars");
+  }
+
+  const url = `${SUPABASE_URL}/rest/v1/plan_settings?plan=eq.${encodeURIComponent(
+    plan
+  )}&select=id,plan,name,price,currency,paymongo_amount,is_active&limit=1`;
+
+  const response = await fetch(url, {
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to fetch plan settings: ${text}`);
+  }
+
+  const data = (await response.json()) as PlanSetting[];
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("Plan not found.");
+  }
+
+  return data[0];
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -41,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       email?: string;
     };
 
-    if (!plan || !(plan in PLAN_CONFIG)) {
+    if (!plan || !["pro", "business"].includes(plan)) {
       return res.status(400).json({ error: "Invalid plan" });
     }
 
@@ -49,7 +75,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Missing userId" });
     }
 
-    const selectedPlan = PLAN_CONFIG[plan];
+    const planData = await getPlanFromDB(plan);
+
+    if (!planData.is_active) {
+      return res
+        .status(400)
+        .json({ error: "This plan is currently unavailable." });
+    }
+
+    if (!planData.paymongo_amount || planData.paymongo_amount <= 0) {
+      return res
+        .status(400)
+        .json({ error: "Invalid plan price configuration." });
+    }
 
     const payload = {
       data: {
@@ -64,11 +102,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           show_line_items: true,
           line_items: [
             {
-              currency: "PHP",
-              amount: selectedPlan.amount,
-              name: selectedPlan.name,
+              currency: planData.currency || "PHP",
+              amount: planData.paymongo_amount,
+              name: planData.name,
               quantity: 1,
-              description: selectedPlan.description,
+              description: `${planData.name} access for 30 days`,
             },
           ],
           payment_method_types: [
@@ -120,7 +158,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       checkoutUrl,
-      raw: result,
     });
   } catch (error: any) {
     return res.status(500).json({
