@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Sidebar } from "../components/sidebar";
-import { TopNavbar } from "../components/top-navbar";
 import { Navbar } from "../components/navbar";
 import { supabase } from "../lib/supabase";
 import { CheckCircle2, Info, XCircle } from "lucide-react";
@@ -16,10 +14,9 @@ type CardCatalogRow = {
 };
 
 export function OrderPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [initializingGuestMode, setInitializingGuestMode] = useState(true);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -41,23 +38,18 @@ export function OrderPage() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const enforceGuestCheckout = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        setIsLoggedIn(!!user);
-
-        if (user?.email) {
-          setEmail((prev) => prev || user.email || "");
-        }
+        // Force guest mode for all users on the order page
+        await supabase.auth.signOut();
       } catch {
-        setIsLoggedIn(false);
+        // Ignore sign-out errors here; page should still behave as guest flow
+      } finally {
+        setInitializingGuestMode(false);
       }
     };
 
-    checkAuth();
+    enforceGuestCheckout();
   }, []);
 
   useEffect(() => {
@@ -142,17 +134,13 @@ export function OrderPage() {
       if (!selectedCard) throw new Error("Please select an available card type.");
       if (quantity < 1) throw new Error("Quantity must be at least 1.");
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       const response = await fetch("/api/paymongo/create-order-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: user?.id || null,
+          userId: null, // always guest
           customerName,
           email,
           phone,
@@ -186,250 +174,227 @@ export function OrderPage() {
     }
   };
 
-  const pageContent = (
-    <main className="flex-1 p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Order SabiCards</h1>
-        <p className="text-gray-600">
-          Order physical NFC cards and have them shipped to your address.
-        </p>
-      </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
 
-      {successMessage ? (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 mb-6 flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-semibold mb-1">Payment Complete</p>
-            <p>{successMessage}</p>
-          </div>
-        </div>
-      ) : null}
-
-      {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 mb-6 flex items-start gap-3">
-          <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-semibold mb-1">Order Notice</p>
-            <p>{error}</p>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 mb-6 flex items-start gap-3">
-        <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
-        <div>
-          <p className="font-semibold mb-1">Payment & Shipping</p>
-          <p>
-            Payment for physical SabiCards is one-time only. Orders are processed
-            after payment confirmation and prepared for shipping to the address you provide.
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Order SabiCards</h1>
+          <p className="text-gray-600">
+            Order physical NFC cards and have them shipped to your address.
           </p>
         </div>
-      </div>
 
-      {loadingCatalog || isLoggedIn === null ? (
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <p>Loading...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6 space-y-6">
+        {successMessage ? (
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 mb-6 flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <div>
-              <h2 className="text-xl font-semibold mb-4">Card Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Card Type
-                  </label>
-                  <select
-                    value={cardType}
-                    onChange={(e) => setCardType(e.target.value)}
-                    className="border rounded-lg px-3 py-2 w-full"
-                  >
-                    {catalog.map((item) => (
-                      <option key={item.card_type} value={item.card_type}>
-                        {item.name} — ₱{item.price}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <p className="font-semibold mb-1">Payment Complete</p>
+              <p>{successMessage}</p>
+            </div>
+          </div>
+        ) : null}
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Quantity
-                  </label>
+        {error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 mb-6 flex items-start gap-3">
+            <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-semibold mb-1">Order Notice</p>
+              <p>{error}</p>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 mb-6 flex items-start gap-3">
+          <Info className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold mb-1">Guest Checkout</p>
+            <p>
+              Card ordering is processed as a guest checkout flow. Payment is one-time only,
+              and your cards will be prepared after payment confirmation.
+            </p>
+          </div>
+        </div>
+
+        {loadingCatalog || initializingGuestMode ? (
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <p>Loading...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6 space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Card Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Card Type
+                    </label>
+                    <select
+                      value={cardType}
+                      onChange={(e) => setCardType(e.target.value)}
+                      className="border rounded-lg px-3 py-2 w-full"
+                    >
+                      {catalog.map((item) => (
+                        <option key={item.card_type} value={item.card_type}>
+                          {item.name} — ₱{item.price}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={quantity}
+                      onChange={(e) =>
+                        setQuantity(Math.max(1, Number(e.target.value) || 1))
+                      }
+                      className="border rounded-lg px-3 py-2 w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">
+                  Customer Information
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(e) =>
-                      setQuantity(Math.max(1, Number(e.target.value) || 1))
-                    }
+                    type="text"
+                    placeholder="Full name"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
                     className="border rounded-lg px-3 py-2 w-full"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Mobile number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full md:col-span-2"
                   />
                 </div>
               </div>
-            </div>
 
-            <div>
-              <h2 className="text-xl font-semibold mb-4">
-                Customer Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Full name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Address line 1"
+                    value={address1}
+                    onChange={(e) => setAddress1(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full md:col-span-2"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Address line 2 (optional)"
+                    value={address2}
+                    onChange={(e) => setAddress2(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full md:col-span-2"
+                  />
+                  <input
+                    type="text"
+                    placeholder="City / Municipality"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Province / State"
+                    value={province}
+                    onChange={(e) => setProvince(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Postal code"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full"
+                  />
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="border rounded-lg px-3 py-2 w-full"
+                  >
+                    <option value="PH">Philippines</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Notes</h2>
+                <textarea
+                  rows={4}
+                  placeholder="Special shipping instructions, preferred contact time, etc."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                   className="border rounded-lg px-3 py-2 w-full"
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full"
-                />
-                <input
-                  type="text"
-                  placeholder="Mobile number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full md:col-span-2"
                 />
               </div>
             </div>
 
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Address line 1"
-                  value={address1}
-                  onChange={(e) => setAddress1(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full md:col-span-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Address line 2 (optional)"
-                  value={address2}
-                  onChange={(e) => setAddress2(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full md:col-span-2"
-                />
-                <input
-                  type="text"
-                  placeholder="City / Municipality"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full"
-                />
-                <input
-                  type="text"
-                  placeholder="Province / State"
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full"
-                />
-                <input
-                  type="text"
-                  placeholder="Postal code"
-                  value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full"
-                />
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full"
-                >
-                  <option value="PH">Philippines</option>
-                </select>
+            <div className="bg-white rounded-xl shadow-md p-6 h-fit">
+              <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span>Card Type</span>
+                  <span className="font-medium">{selectedCard?.name || "—"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Unit Price</span>
+                  <span className="font-medium">₱{unitPrice}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Quantity</span>
+                  <span className="font-medium">{quantity}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span className="font-medium">₱{subtotal}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Shipping Fee</span>
+                  <span className="font-medium">₱{shippingFee}</span>
+                </div>
+                <div className="border-t pt-3 flex justify-between text-base">
+                  <span className="font-semibold">Total</span>
+                  <span className="font-bold">₱{total}</span>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Notes</h2>
-              <textarea
-                rows={4}
-                placeholder="Special shipping instructions, preferred contact time, etc."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="border rounded-lg px-3 py-2 w-full"
-              />
+              <div className="mt-6 text-xs text-gray-600 space-y-2">
+                <p>Payment is one-time only for this card order.</p>
+                <p>Your cards will be prepared after payment confirmation.</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCheckout}
+                disabled={submitting}
+                className="w-full mt-6 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-3 font-medium disabled:opacity-60"
+              >
+                {submitting ? "Redirecting..." : "Proceed to Payment"}
+              </button>
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 h-fit">
-            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span>Card Type</span>
-                <span className="font-medium">{selectedCard?.name || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Unit Price</span>
-                <span className="font-medium">₱{unitPrice}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Quantity</span>
-                <span className="font-medium">{quantity}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span className="font-medium">₱{subtotal}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Shipping Fee</span>
-                <span className="font-medium">₱{shippingFee}</span>
-              </div>
-              <div className="border-t pt-3 flex justify-between text-base">
-                <span className="font-semibold">Total</span>
-                <span className="font-bold">₱{total}</span>
-              </div>
-            </div>
-
-            <div className="mt-6 text-xs text-gray-600 space-y-2">
-              <p>Payment is one-time only for this card order.</p>
-              <p>Your cards will be prepared after payment confirmation.</p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={submitting}
-              className="w-full mt-6 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-3 font-medium disabled:opacity-60"
-            >
-              {submitting ? "Redirecting..." : "Proceed to Payment"}
-            </button>
-          </div>
-        </div>
-      )}
-    </main>
-  );
-
-  if (isLoggedIn === null) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto">{pageContent}</div>
-      </div>
-    );
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="max-w-7xl mx-auto">{pageContent}</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col">
-        <TopNavbar onMenuClick={() => setSidebarOpen(true)} />
-        {pageContent}
+        )}
       </div>
     </div>
   );

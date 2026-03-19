@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { savePendingCardUid, clearPendingCardUid } from "../lib/card-session";
 import { activateCard } from "../lib/card-service";
 import { getCardTapDestination } from "../lib/tap-service";
+import sabiLogo from "../assets/sabi-logo.png";
 
 export function ActivationPage() {
   const [searchParams] = useSearchParams();
@@ -17,10 +18,12 @@ export function ActivationPage() {
   const [message, setMessage] = useState("Checking your card...");
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [cardAlreadyOwned, setCardAlreadyOwned] = useState(false);
 
   useEffect(() => {
     const run = async () => {
       if (!cardUid) {
+        clearPendingCardUid();
         setError("Missing card UID in URL.");
         setLoading(false);
         return;
@@ -31,13 +34,31 @@ export function ActivationPage() {
       try {
         const cardInfo = await getCardTapDestination(cardUid);
 
-        if (cardInfo.status === "active" && cardInfo.username) {
-          navigate(`/card/${cardInfo.username}`, { replace: true });
+        if (cardInfo.status === "active") {
+          clearPendingCardUid();
+          setCardAlreadyOwned(true);
+
+          if (cardInfo.username) {
+            setMessage("This card is already activated. Opening the digital card...");
+            setTimeout(() => navigate(`/card/${cardInfo.username}`, { replace: true }), 800);
+            return;
+          }
+
+          setError("This card is already assigned to another user.");
+          setLoading(false);
           return;
         }
 
         if (cardInfo.status === "disabled") {
+          clearPendingCardUid();
           setError("This card is disabled.");
+          setLoading(false);
+          return;
+        }
+
+        if (cardInfo.status === "blocked") {
+          clearPendingCardUid();
+          setError("This card is blocked.");
           setLoading(false);
           return;
         }
@@ -53,8 +74,11 @@ export function ActivationPage() {
         }
 
         setCurrentUser(user);
-        setMessage("You are signed in. Confirm if you want to activate this card under your account.");
+        setMessage(
+          "You are signed in. Confirm if you want to activate this card under your account."
+        );
       } catch (err: any) {
+        clearPendingCardUid();
         setError(err.message || "Activation failed.");
       } finally {
         setLoading(false);
@@ -84,14 +108,20 @@ export function ActivationPage() {
       setMessage("Card activated successfully. Redirecting to dashboard...");
       setTimeout(() => navigate("/dashboard"), 800);
     } catch (err: any) {
-      setError(err.message || "Activation failed.");
+      clearPendingCardUid();
+      setError(
+        err.message ||
+          "Activation failed. This card may already be assigned to another user."
+      );
     } finally {
       setActivating(false);
     }
   };
 
   const handleUseAnotherAccount = async () => {
+    clearPendingCardUid();
     await supabase.auth.signOut();
+    savePendingCardUid(cardUid);
     navigate(`/login?next=${encodeURIComponent(`/activate?uid=${cardUid}`)}`);
   };
 
@@ -100,7 +130,11 @@ export function ActivationPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-12 h-12 bg-indigo-600 rounded-lg"></div>
+            <img
+              src={sabiLogo}
+              alt="SabiCard"
+              className="w-12 h-12 object-contain"
+            />
             <span className="font-semibold text-2xl">SabiCard</span>
           </Link>
         </div>
@@ -151,7 +185,7 @@ export function ActivationPage() {
               </div>
             )}
 
-            {!loading && !error && !currentUser && (
+            {!loading && !error && !currentUser && !cardAlreadyOwned && (
               <div className="space-y-3 pt-2">
                 <Link
                   to={`/login?next=${encodeURIComponent(`/activate?uid=${cardUid}`)}`}
@@ -168,7 +202,7 @@ export function ActivationPage() {
               </div>
             )}
 
-            {!loading && !error && currentUser && (
+            {!loading && !error && currentUser && !cardAlreadyOwned && (
               <div className="space-y-3 pt-2">
                 <button
                   onClick={handleConfirmActivation}

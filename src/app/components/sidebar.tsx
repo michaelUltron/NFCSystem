@@ -17,6 +17,7 @@ import {
   canUseLeads,
 } from "../lib/subscription-service";
 import { checkIsAdmin } from "../lib/admin-service";
+import { supabase } from "../lib/supabase";
 
 type SidebarProps = {
   isOpen?: boolean;
@@ -25,27 +26,64 @@ type SidebarProps = {
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const location = useLocation();
+
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [plan, setPlan] = useState("free");
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
     const loadAccess = async () => {
       try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!mounted) return;
+
+        if (!user) {
+          setIsAuthenticated(false);
+          setPlan("free");
+          setIsAdmin(false);
+          setAuthChecked(true);
+          return;
+        }
+
+        setIsAuthenticated(true);
+
         const [subscription, admin] = await Promise.all([
           getMySubscription(),
           checkIsAdmin(),
         ]);
 
+        if (!mounted) return;
+
         setPlan(subscription?.plan || "free");
         setIsAdmin(Boolean(admin));
       } catch {
+        if (!mounted) return;
+        setIsAuthenticated(false);
         setPlan("free");
         setIsAdmin(false);
+      } finally {
+        if (mounted) {
+          setAuthChecked(true);
+        }
       }
     };
 
     loadAccess();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  if (!authChecked || !isAuthenticated) {
+    return null;
+  }
 
   const navItems = [
     {
@@ -99,14 +137,8 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   ];
 
   const isActive = (href: string) => {
-    if (href === "/admin") {
-      return location.pathname === "/admin";
-    }
-
-    if (href === "/admin/orders") {
-      return location.pathname === "/admin/orders";
-    }
-
+    if (href === "/admin") return location.pathname === "/admin";
+    if (href === "/admin/orders") return location.pathname === "/admin/orders";
     return location.pathname === href;
   };
 

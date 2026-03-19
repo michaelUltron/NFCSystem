@@ -140,19 +140,19 @@ export function DigitalCardPage() {
         const links = await getPublicSocialLinksByUserId(publicProfile.id);
         setSocials(links);
 
-        const { data: subData, error: subError } = await supabase
-          .from("subscriptions")
-          .select("plan")
-          .eq("user_id", publicProfile.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+ const { data: publicPlan, error: publicPlanError } = await supabase.rpc(
+  "get_public_user_plan",
+  {
+    p_user_id: publicProfile.id,
+  }
+);
 
-        if (!subError && subData?.plan) {
-          setOwnerPlan(subData.plan);
-        } else {
-          setOwnerPlan("free");
-        }
+if (!publicPlanError && publicPlan) {
+  setOwnerPlan(publicPlan);
+} else {
+  setOwnerPlan("free");
+}
+
       } catch (err: any) {
         setError(err.message || "Card not found.");
       } finally {
