@@ -1,9 +1,8 @@
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { User, Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { getPendingCardUid, clearPendingCardUid } from "../lib/card-session";
-import { activateCard } from "../lib/card-service";
+import sabiLogo from "../assets/sabi-logo.png";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -14,45 +13,77 @@ export function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [agree, setAgree] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setMessage("");
+    setSuccess("");
 
     try {
+      if (!fullName.trim()) {
+        throw new Error("Full name is required.");
+      }
+
+      if (!email.trim()) {
+        throw new Error("Email is required.");
+      }
+
+      if (password.length < 6) {
+        throw new Error("Password must be at least 6 characters.");
+      }
+
+      if (password !== confirmPassword) {
+        throw new Error("Passwords do not match.");
+      }
+
+      const { data: exists, error: existsError } = await supabase.rpc(
+        "is_email_already_registered",
+        {
+          p_email: email.trim(),
+        }
+      );
+
+      if (existsError) throw existsError;
+
+      if (exists) {
+        throw new Error("This email is already registered.");
+      }
+
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           data: {
-            full_name: fullName,
+            full_name: fullName.trim(),
           },
         },
       });
 
       if (signUpError) throw signUpError;
 
-      if (!data.session) {
-        setMessage("Account created. Please confirm your email first, then sign in to activate your card.");
-        return;
+      // Optional: update profile full name if your trigger only inserts id/email
+      if (data.user?.id) {
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: fullName.trim(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", data.user.id);
       }
 
-      const pendingUid = getPendingCardUid();
-
-      if (pendingUid) {
-        await activateCard(pendingUid);
-        clearPendingCardUid();
-        navigate("/dashboard");
-        return;
-      }
-
-      navigate(next);
+      setSuccess("Account created successfully. You may now sign in.");
+      setTimeout(() => {
+        navigate(`/login?next=${encodeURIComponent(next)}`);
+      }, 1200);
     } catch (err: any) {
       setError(err.message || "Registration failed.");
     } finally {
@@ -61,30 +92,33 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-indigo-600 rounded-lg"></div>
+            <img
+              src={sabiLogo}
+              alt="SabiCard"
+              className="w-10 h-10 object-contain"
+            />
             <span className="font-semibold text-2xl">SabiCard</span>
           </Link>
           <h1 className="text-3xl font-bold mb-2">Create your account</h1>
-          <p className="text-gray-600">Start networking smarter today</p>
+          <p className="text-gray-600">Get started with SabiCard</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-8">
           <form className="space-y-6" onSubmit={handleRegister}>
             <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-2">
+              <label htmlFor="fullName" className="block text-sm font-medium mb-2">
                 Full Name
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
-                  id="name"
-                  name="name"
-                  placeholder="John Doe"
+                  id="fullName"
+                  placeholder="Juan Dela Cruz"
                   className="border rounded-lg px-3 py-2 pl-10 w-full"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -102,7 +136,6 @@ export function RegisterPage() {
                 <input
                   type="email"
                   id="email"
-                  name="email"
                   placeholder="you@example.com"
                   className="border rounded-lg px-3 py-2 pl-10 w-full"
                   value={email}
@@ -119,56 +152,79 @@ export function RegisterPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   id="password"
-                  name="password"
                   placeholder="••••••••"
-                  className="border rounded-lg px-3 py-2 pl-10 w-full"
+                  className="border rounded-lg px-3 py-2 pl-10 pr-10 w-full"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
 
             <div>
-              <label className="flex items-start gap-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium mb-2"
+              >
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="checkbox"
-                  className="rounded mt-1"
-                  checked={agree}
-                  onChange={(e) => setAgree(e.target.checked)}
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  placeholder="••••••••"
+                  className="border rounded-lg px-3 py-2 pl-10 pr-10 w-full"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
-                <span className="text-sm text-gray-600">
-                  I agree to the{" "}
-                  <a href="#" className="text-indigo-600 hover:text-indigo-700">
-                    Terms of Service
-                  </a>{" "}
-                  and{" "}
-                  <a href="#" className="text-indigo-600 hover:text-indigo-700">
-                    Privacy Policy
-                  </a>
-                </span>
-              </label>
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={
+                    showConfirmPassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
-            {error && (
+            {error ? (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {error}
               </div>
-            )}
+            ) : null}
 
-            {message && (
+            {success ? (
               <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                {message}
+                {success}
               </div>
-            )}
+            ) : null}
 
             <button
               type="submit"
-              disabled={loading || !agree}
+              disabled={loading}
               className="block w-full text-center bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-3 disabled:opacity-60"
             >
               {loading ? "Creating Account..." : "Create Account"}
