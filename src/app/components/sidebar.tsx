@@ -8,6 +8,7 @@ import {
   Shield,
   CreditCard,
   Package,
+  Building2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import sabiLogo from "../assets/sabi-logo.png";
@@ -18,6 +19,7 @@ import {
 } from "../lib/subscription-service";
 import { checkIsAdmin } from "../lib/admin-service";
 import { supabase } from "../lib/supabase";
+import { getMyAccountManagementStatus } from "../lib/business-service";
 
 type SidebarProps = {
   isOpen?: boolean;
@@ -29,8 +31,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const [plan, setPlan] = useState("free");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isBusinessOwner, setIsBusinessOwner] = useState(false);
+  const [canManageBilling, setCanManageBilling] = useState(true);
+  const [managedByOrganization, setManagedByOrganization] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -47,26 +53,40 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           setIsAuthenticated(false);
           setPlan("free");
           setIsAdmin(false);
+          setIsBusinessOwner(false);
+          setCanManageBilling(true);
+          setManagedByOrganization(false);
           setAuthChecked(true);
           return;
         }
 
         setIsAuthenticated(true);
 
-        const [subscription, admin] = await Promise.all([
+        const [subscription, admin, accountStatus] = await Promise.all([
           getMySubscription(),
           checkIsAdmin(),
+          getMyAccountManagementStatus(),
         ]);
 
         if (!mounted) return;
 
         setPlan(subscription?.plan || "free");
         setIsAdmin(Boolean(admin));
+        setIsBusinessOwner(Boolean(accountStatus?.is_business_owner));
+        setCanManageBilling(
+          accountStatus?.can_manage_billing === false ? false : true
+        );
+        setManagedByOrganization(
+          Boolean(accountStatus?.managed_by_organization)
+        );
       } catch {
         if (!mounted) return;
         setIsAuthenticated(false);
         setPlan("free");
         setIsAdmin(false);
+        setIsBusinessOwner(false);
+        setCanManageBilling(true);
+        setManagedByOrganization(false);
       } finally {
         if (mounted) {
           setAuthChecked(true);
@@ -102,7 +122,13 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       label: "Plans",
       href: "/plans",
       icon: CreditCard,
-      visible: true,
+      visible: !managedByOrganization || canManageBilling,
+    },
+    {
+      label: "Business",
+      href: "/business",
+      icon: Building2,
+      visible: isBusinessOwner,
     },
     {
       label: "Leads",
@@ -139,6 +165,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const isActive = (href: string) => {
     if (href === "/admin") return location.pathname === "/admin";
     if (href === "/admin/orders") return location.pathname === "/admin/orders";
+    if (href === "/business") return location.pathname === "/business";
     return location.pathname === href;
   };
 

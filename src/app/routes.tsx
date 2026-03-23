@@ -15,6 +15,7 @@ import { PlansPage } from "./pages/plans-page";
 import { OrderPage } from "./pages/order-page";
 import { AdminOrdersPage } from "./pages/admin-orders-page";
 import { ResetPasswordPage } from "./pages/reset-password-page";
+import { BusinessPage } from "./pages/business-page";
 
 export const router = createBrowserRouter([
   {
@@ -80,5 +81,9 @@ export const router = createBrowserRouter([
 {
   path: "/reset-password",
   Component: ResetPasswordPage,
+},
+{
+  path: "/business",
+  Component: BusinessPage,
 },
 ]);

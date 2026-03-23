@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Sidebar } from "../components/sidebar";
 import { TopNavbar } from "../components/top-navbar";
 import { getMySubscription, getPlanLabel } from "../lib/subscription-service";
-import { BadgeCheck, CheckCircle, CreditCard, Info } from "lucide-react";
+import { getMyAccountManagementStatus } from "../lib/business-service";
+import { BadgeCheck, CheckCircle, CreditCard, Info, Lock } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type PlanKey = "free" | "pro" | "business";
@@ -35,24 +36,32 @@ export function PlansPage() {
   const [plans, setPlans] = useState<PlanCard[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [managedByOrganization, setManagedByOrganization] = useState(false);
+  const [canManageBilling, setCanManageBilling] = useState(true);
+  const [isBusinessOwner, setIsBusinessOwner] = useState(false);
 
   const loadPage = async () => {
-    const [subscription, planRows] = await Promise.all([
+    const [subscription, planRows, accountStatus] = await Promise.all([
       getMySubscription(),
       supabase
         .from("plan_settings")
         .select("id, plan, name, price, currency, paymongo_amount, is_active")
         .order("price", { ascending: true }),
+      getMyAccountManagementStatus(),
     ]);
 
     setCurrentPlan((subscription?.plan as PlanKey) || "free");
+    setManagedByOrganization(Boolean(accountStatus?.managed_by_organization));
+    setCanManageBilling(
+      accountStatus?.can_manage_billing === false ? false : true
+    );
+    setIsBusinessOwner(Boolean(accountStatus?.is_business_owner));
 
     if (planRows.error) {
       throw planRows.error;
     }
 
     const settings = (planRows.data ?? []) as PlanSettingRow[];
-
     const settingsMap = new Map(settings.map((row) => [row.plan, row]));
 
     const builtPlans: PlanCard[] = [
@@ -80,11 +89,12 @@ export function PlansPage() {
         subtitle: "Best for individual professionals",
         popular: true,
         features: [
-          "Unlimited active cards",
+          "Everything in Free",
+          "Multiple cards per account",
           "Tap analytics",
           "Lead capture",
           "Theme customization",
-          "Priority growth features",
+          "Export your own leads",
         ],
         isActive: settingsMap.get("pro")?.is_active ?? true,
       },
@@ -92,13 +102,14 @@ export function PlansPage() {
         key: "business",
         title: settingsMap.get("business")?.name || "Business",
         priceLabel: `₱${settingsMap.get("business")?.price ?? 0}`,
-        subtitle: "For teams and scaling use",
+        subtitle: "For teams and managed company cards",
         features: [
           "Everything in Pro",
-          "Unlimited active cards",
-          "Lead capture",
-          "Analytics",
-          "Ready for team tools later",
+          "Business branding",
+          "Assign cards to team members",
+          "Company-managed cards",
+          "Shared business analytics",
+          "Shared business leads",
         ],
         isActive: settingsMap.get("business")?.is_active ?? true,
       },
@@ -138,6 +149,17 @@ export function PlansPage() {
       setError("");
       setSuccess("");
 
+      const accountStatus = await getMyAccountManagementStatus();
+
+      if (
+        accountStatus?.managed_by_organization &&
+        accountStatus?.can_manage_billing === false
+      ) {
+        throw new Error(
+          "Your account is managed by your organization. You cannot change plans."
+        );
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -176,6 +198,8 @@ export function PlansPage() {
     }
   };
 
+  const showManagedNotice = managedByOrganization && !canManageBilling;
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -212,6 +236,21 @@ export function PlansPage() {
             </div>
           ) : null}
 
+          {showManagedNotice ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-8">
+              <div className="flex items-start gap-3">
+                <Lock className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div className="text-sm text-amber-900">
+                  <p className="font-semibold mb-1">Billing Managed by Organization</p>
+                  <p>
+                    Your account is managed by your organization. Plan changes and
+                    billing actions are disabled for this account.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-8">
             <div className="flex items-start gap-3">
               <Info className="w-5 h-5 text-blue-600 mt-0.5" />
@@ -238,7 +277,6 @@ export function PlansPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {plans.map((plan) => {
                 const isCurrent = currentPlan === plan.key;
-                const isPaidPlan = plan.key === "pro" || plan.key === "business";
                 const isCheckingOut = checkingOutPlan === plan.key;
 
                 return (
@@ -321,6 +359,18 @@ export function PlansPage() {
                       >
                         Current Plan
                       </button>
+                    ) : showManagedNotice ? (
+                      <button
+                        type="button"
+                        disabled
+                        className={`w-full rounded-lg px-6 py-3 font-medium cursor-not-allowed ${
+                          plan.popular
+                            ? "bg-white text-indigo-600"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        Managed by Organization
+                      </button>
                     ) : plan.key === "free" ? (
                       <button
                         type="button"
@@ -356,6 +406,13 @@ export function PlansPage() {
               on your PayMongo account and checkout configuration, such as cards,
               GCash, Maya, QR Ph, and other supported channels.
             </p>
+
+            {isBusinessOwner ? (
+              <p className="text-sm text-gray-600 mt-3">
+                As a Business owner, your subscription can support company-managed
+                cards, organization branding, and assigned users under your control.
+              </p>
+            ) : null}
           </div>
         </main>
       </div>
