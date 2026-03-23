@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Sidebar } from "../components/sidebar";
 import { TopNavbar } from "../components/top-navbar";
+import { Toast } from "../components/toast";
 import {
   adminCreateCard,
   adminListCards,
@@ -24,6 +25,7 @@ import {
   Search,
   BadgeCheck,
   Package,
+  Wifi,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -66,6 +68,7 @@ export function AdminPage() {
   const [userSearch, setUserSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [encodingUid, setEncodingUid] = useState<string | null>(null);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -102,6 +105,17 @@ export function AdminPage() {
 
     run();
   }, []);
+
+  useEffect(() => {
+    if (!error && !success) return;
+
+    const timer = setTimeout(() => {
+      setError("");
+      setSuccess("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [error, success]);
 
   const filteredCards = useMemo(() => {
     return cards.filter((card) => {
@@ -168,6 +182,33 @@ export function AdminPage() {
     [cards]
   );
 
+  const totalUsers = useMemo(() => users.length, [users]);
+
+  const freeUsers = useMemo(
+    () => users.filter((u) => (u.plan || "free") === "free").length,
+    [users]
+  );
+
+  const proUsers = useMemo(
+    () => users.filter((u) => u.plan === "pro").length,
+    [users]
+  );
+
+  const businessUsers = useMemo(
+    () => users.filter((u) => u.plan === "business").length,
+    [users]
+  );
+
+  const withUsername = useMemo(
+    () => users.filter((u) => !!u.username && u.username.trim() !== "").length,
+    [users]
+  );
+
+  const adminUsers = useMemo(
+    () => users.filter((u) => !!u.is_admin).length,
+    [users]
+  );
+
   const handleCreateCard = async () => {
     setCreating(true);
     setError("");
@@ -214,6 +255,53 @@ export function AdminPage() {
       setError("");
     } catch {
       setError(`Failed to copy tap URL for ${uid}.`);
+    }
+  };
+
+  const handleWriteNfc = async (uid: string) => {
+    try {
+      setEncodingUid(uid);
+      setError("");
+      setSuccess("");
+
+      if (!("NDEFReader" in window)) {
+        throw new Error(
+          "Web NFC is not supported on this device. Please use Chrome on Android over HTTPS with NFC turned on."
+        );
+      }
+
+      const tapUrl = getTapUrl(uid);
+      const ndef = new (window as any).NDEFReader();
+
+      await ndef.write({
+        records: [
+          {
+            recordType: "url",
+            data: tapUrl,
+          },
+        ],
+      });
+
+      setSuccess(`Card ${uid} encoded successfully.`);
+    } catch (err: any) {
+      const name = err?.name || "";
+
+      if (name === "NotAllowedError") {
+        setError("NFC permission was denied. Please allow NFC access and try again.");
+      } else if (name === "NotSupportedError") {
+        setError("This device or browser does not support Web NFC writing.");
+      } else if (name === "NotReadableError") {
+        setError("Could not access the NFC tag. Hold the card closer and keep it still.");
+      } else if (name === "NetworkError") {
+        setError("Write started but failed. Keep the card near the phone until writing finishes.");
+      } else {
+        setError(
+          err?.message ||
+            "Failed to write NFC. Make sure NFC is enabled and use Chrome on Android."
+        );
+      }
+    } finally {
+      setEncodingUid(null);
     }
   };
 
@@ -286,377 +374,416 @@ export function AdminPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <>
+      {success ? (
+        <Toast type="success" message={success} onClose={() => setSuccess("")} />
+      ) : null}
 
-      <div className="flex-1 flex flex-col">
-        <TopNavbar onMenuClick={() => setSidebarOpen(true)} />
+      {error ? (
+        <Toast type="error" message={error} onClose={() => setError("")} />
+      ) : null}
 
-        <main className="flex-1 p-6">
-          <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
-              <p className="text-gray-600">
-                Manage card inventory, subscriptions, and admin tools.
-              </p>
-            </div>
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            <Link
-              to="/admin/orders"
-              className="inline-flex items-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-3"
-            >
-              <Package className="w-4 h-4" />
-              Go to Admin Orders
-            </Link>
-          </div>
+        <div className="flex-1 flex flex-col">
+          <TopNavbar onMenuClick={() => setSidebarOpen(true)} />
 
-          {loading ? (
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <p>Loading admin page...</p>
-            </div>
-          ) : !isAdmin ? (
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <p className="text-red-600 font-medium">
-                You do not have admin access.
-              </p>
-              <p className="text-sm text-gray-600 mt-2">
-                Set your profile is_admin = true in Supabase to use this page.
-              </p>
-            </div>
-          ) : (
-            <>
-              {(error || success) && (
-                <div className="mb-6">
-                  {error ? (
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                      {error}
-                    </div>
-                  ) : null}
-                  {success ? (
-                    <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                      {success}
-                    </div>
-                  ) : null}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <p className="text-sm text-gray-500 mb-1">Inactive Cards</p>
-                  <p className="text-3xl font-bold">{inactiveCount}</p>
-                </div>
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <p className="text-sm text-gray-500 mb-1">Active Cards</p>
-                  <p className="text-3xl font-bold">{activeCount}</p>
-                </div>
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <p className="text-sm text-gray-500 mb-1">Blocked Cards</p>
-                  <p className="text-3xl font-bold">{blockedCount}</p>
-                </div>
+          <main className="flex-1 p-6">
+            <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
+                <p className="text-gray-600">
+                  Manage card inventory, subscriptions, and admin tools.
+                </p>
               </div>
 
-              <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-                <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-                  <h2 className="text-xl font-semibold">Create New Card</h2>
-                  <button
-                    type="button"
-                    onClick={() => setCardUid(generateCardUid())}
-                    className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Generate UID
-                  </button>
-                </div>
+              <Link
+                to="/admin/orders"
+                className="inline-flex items-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-3"
+              >
+                <Package className="w-4 h-4" />
+                Go to Admin Orders
+              </Link>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Card UID
-                    </label>
-                    <input
-                      type="text"
-                      value={cardUid}
-                      onChange={(e) => setCardUid(e.target.value)}
-                      className="border rounded-lg px-3 py-2 w-full"
-                      placeholder="SC123456"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Card Type
-                    </label>
-                    <select
-                      value={cardType}
-                      onChange={(e) => setCardType(e.target.value)}
-                      className="border rounded-lg px-3 py-2 w-full"
-                    >
-                      <option value="standard">Standard</option>
-                      <option value="premium">Premium</option>
-                      <option value="metal">Metal</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      onClick={handleCreateCard}
-                      disabled={creating}
-                      className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {creating ? "Creating..." : "Create Card"}
-                    </button>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <p>Loading admin page...</p>
               </div>
+            ) : !isAdmin ? (
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <p className="text-red-600 font-medium">
+                  You do not have admin access.
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  Set your profile is_admin = true in Supabase to use this page.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-white rounded-xl shadow-md p-6">
+                    <p className="text-sm text-gray-500 mb-1">Inactive Cards</p>
+                    <p className="text-3xl font-bold">{inactiveCount}</p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-md p-6">
+                    <p className="text-sm text-gray-500 mb-1">Active Cards</p>
+                    <p className="text-3xl font-bold">{activeCount}</p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-md p-6">
+                    <p className="text-sm text-gray-500 mb-1">Blocked Cards</p>
+                    <p className="text-3xl font-bold">{blockedCount}</p>
+                  </div>
+                </div>
 
-              <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-                <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-                  <h2 className="text-xl font-semibold">Card Inventory</h2>
-
-                  <div className="flex gap-2 flex-wrap">
+                <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+                  <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+                    <h2 className="text-xl font-semibold">Create New Card</h2>
                     <button
                       type="button"
-                      onClick={handleExportExcel}
+                      onClick={() => setCardUid(generateCardUid())}
                       className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
                     >
-                      <Download className="w-4 h-4" />
-                      Export Excel
+                      <RefreshCw className="w-4 h-4" />
+                      Generate UID
                     </button>
+                  </div>
 
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="border rounded-lg px-3 py-2"
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="active">Active</option>
-                      <option value="blocked">Blocked</option>
-                      <option value="disabled">Disabled</option>
-                    </select>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Card UID
+                      </label>
+                      <input
+                        type="text"
+                        value={cardUid}
+                        onChange={(e) => setCardUid(e.target.value)}
+                        className="border rounded-lg px-3 py-2 w-full"
+                        placeholder="SC123456"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Card Type
+                      </label>
+                      <select
+                        value={cardType}
+                        onChange={(e) => setCardType(e.target.value)}
+                        className="border rounded-lg px-3 py-2 w-full"
+                      >
+                        <option value="standard">Standard</option>
+                        <option value="premium">Premium</option>
+                        <option value="metal">Metal</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-end">
+                      <button
+                        type="button"
+                        onClick={handleCreateCard}
+                        disabled={creating}
+                        className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60"
+                      >
+                        <Plus className="w-4 h-4" />
+                        {creating ? "Creating..." : "Create Card"}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2">
-                      Search
-                    </label>
-                    <div className="relative">
+                <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+                  <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+                    <h2 className="text-xl font-semibold">Card Inventory</h2>
+
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={handleExportExcel}
+                        className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                      >
+                        <Download className="w-4 h-4" />
+                        Export Excel
+                      </button>
+
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="border rounded-lg px-3 py-2"
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="active">Active</option>
+                        <option value="blocked">Blocked</option>
+                        <option value="disabled">Disabled</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium mb-2">
+                        Search
+                      </label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          placeholder="Search UID, status, type, owner, reason..."
+                          className="border rounded-lg px-3 py-2 pl-10 w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Activated From
+                      </label>
+                      <input
+                        type="date"
+                        value={activatedFrom}
+                        onChange={(e) => setActivatedFrom(e.target.value)}
+                        className="border rounded-lg px-3 py-2 w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Activated To
+                      </label>
+                      <input
+                        type="date"
+                        value={activatedTo}
+                        onChange={(e) => setActivatedTo(e.target.value)}
+                        className="border rounded-lg px-3 py-2 w-full"
+                      />
+                    </div>
+                  </div>
+
+                  {filteredCards.length === 0 ? (
+                    <p className="text-gray-600">No cards found.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredCards.map((card) => (
+                        <div key={card.id} className="border rounded-xl p-4">
+                          <div className="flex items-start justify-between gap-4 flex-wrap">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <CreditCard className="w-4 h-4 text-indigo-600" />
+                                <h3 className="font-semibold">{card.card_uid}</h3>
+                                <span
+                                  className={`text-xs px-2 py-1 rounded-full ${
+                                    card.status === "inactive"
+                                      ? "bg-gray-100 text-gray-700"
+                                      : card.status === "active"
+                                      ? "bg-green-100 text-green-700"
+                                      : card.status === "blocked"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-slate-100 text-slate-700"
+                                  }`}
+                                >
+                                  {card.status || "unknown"}
+                                </span>
+                              </div>
+
+                              <p className="text-sm text-gray-600">
+                                <strong>Type:</strong>{" "}
+                                {card.card_type || "standard"}
+                              </p>
+
+                              <p className="text-sm text-gray-600 break-all">
+                                <strong>Tap URL:</strong> {getTapUrl(card.card_uid)}
+                              </p>
+
+                              {card.user_id ? (
+                                <p className="text-sm text-gray-600 break-all">
+                                  <strong>Owner:</strong> {card.user_id}
+                                </p>
+                              ) : null}
+
+                              {card.activation_date ? (
+                                <p className="text-sm text-gray-600">
+                                  <strong>Activated:</strong>{" "}
+                                  {new Date(card.activation_date).toLocaleString()}
+                                </p>
+                              ) : null}
+
+                              {card.created_at ? (
+                                <p className="text-sm text-gray-600">
+                                  <strong>Created:</strong>{" "}
+                                  {new Date(card.created_at).toLocaleString()}
+                                </p>
+                              ) : null}
+
+                              {card.blocked_reason ? (
+                                <p className="text-sm text-gray-600">
+                                  <strong>Blocked Reason:</strong>{" "}
+                                  {card.blocked_reason}
+                                </p>
+                              ) : null}
+                            </div>
+
+                            <div className="flex gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() => handleCopyTapUrl(card.card_uid)}
+                                className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                              >
+                                <Copy className="w-4 h-4" />
+                                Copy Tap URL
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleWriteNfc(card.card_uid)}
+                                disabled={encodingUid === card.card_uid}
+                                className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+                              >
+                                <Wifi className="w-4 h-4" />
+                                {encodingUid === card.card_uid
+                                  ? "Encoding..."
+                                  : "Encode NFC"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+                    <h2 className="text-xl font-semibold">User Subscriptions</h2>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+                    <div className="bg-gray-50 border rounded-lg p-3">
+                      <p className="text-xs text-gray-500">Total Users</p>
+                      <p className="text-lg font-bold">{totalUsers}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border rounded-lg p-3">
+                      <p className="text-xs text-gray-500">Free</p>
+                      <p className="text-lg font-bold">{freeUsers}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border rounded-lg p-3">
+                      <p className="text-xs text-gray-500">Pro</p>
+                      <p className="text-lg font-bold">{proUsers}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border rounded-lg p-3">
+                      <p className="text-xs text-gray-500">Business</p>
+                      <p className="text-lg font-bold">{businessUsers}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border rounded-lg p-3">
+                      <p className="text-xs text-gray-500">With Username</p>
+                      <p className="text-lg font-bold">{withUsername}</p>
+                    </div>
+
+                    <div className="bg-gray-50 border rounded-lg p-3">
+                      <p className="text-xs text-gray-500">Admins</p>
+                      <p className="text-lg font-bold">{adminUsers}</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="relative max-w-md">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search UID, status, type, owner, reason..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        placeholder="Search email, name, username, plan..."
                         className="border rounded-lg px-3 py-2 pl-10 w-full"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Activated From
-                    </label>
-                    <input
-                      type="date"
-                      value={activatedFrom}
-                      onChange={(e) => setActivatedFrom(e.target.value)}
-                      className="border rounded-lg px-3 py-2 w-full"
-                    />
-                  </div>
+                  {filteredUsers.length === 0 ? (
+                    <p className="text-gray-600">No users found.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredUsers.map((user) => (
+                        <div key={user.user_id} className="border rounded-xl p-4">
+                          <div className="flex items-start justify-between gap-4 flex-wrap">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold">
+                                  {user.full_name || "Unnamed User"}
+                                </h3>
+                                {user.is_admin ? (
+                                  <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                                    <BadgeCheck className="w-3 h-3" />
+                                    Admin
+                                  </span>
+                                ) : null}
+                              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Activated To
-                    </label>
-                    <input
-                      type="date"
-                      value={activatedTo}
-                      onChange={(e) => setActivatedTo(e.target.value)}
-                      className="border rounded-lg px-3 py-2 w-full"
-                    />
-                  </div>
-                </div>
+                              <p className="text-sm text-gray-600">
+                                <strong>Email:</strong> {user.email || "No email"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <strong>Username:</strong> {user.username || "—"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <strong>Plan:</strong> {user.plan || "free"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <strong>Status:</strong> {user.status || "active"}
+                              </p>
+                            </div>
 
-                {filteredCards.length === 0 ? (
-                  <p className="text-gray-600">No cards found.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredCards.map((card) => (
-                      <div key={card.id} className="border rounded-xl p-4">
-                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <CreditCard className="w-4 h-4 text-indigo-600" />
-                              <h3 className="font-semibold">{card.card_uid}</h3>
-                              <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                  card.status === "inactive"
-                                    ? "bg-gray-100 text-gray-700"
-                                    : card.status === "active"
-                                    ? "bg-green-100 text-green-700"
-                                    : card.status === "blocked"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-slate-100 text-slate-700"
-                                }`}
+                            <div className="flex gap-2 flex-wrap">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdatePlan(user.user_id, "free")
+                                }
+                                disabled={updatingUserId === user.user_id}
+                                className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
                               >
-                                {card.status || "unknown"}
-                              </span>
+                                Set Free
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdatePlan(user.user_id, "pro")
+                                }
+                                disabled={updatingUserId === user.user_id}
+                                className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+                              >
+                                Set Pro
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleUpdatePlan(user.user_id, "business")
+                                }
+                                disabled={updatingUserId === user.user_id}
+                                className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+                              >
+                                Set Business
+                              </button>
                             </div>
-
-                            <p className="text-sm text-gray-600">
-                              <strong>Type:</strong>{" "}
-                              {card.card_type || "standard"}
-                            </p>
-
-                            <p className="text-sm text-gray-600 break-all">
-                              <strong>Tap URL:</strong> {getTapUrl(card.card_uid)}
-                            </p>
-
-                            {card.user_id ? (
-                              <p className="text-sm text-gray-600 break-all">
-                                <strong>Owner:</strong> {card.user_id}
-                              </p>
-                            ) : null}
-
-                            {card.activation_date ? (
-                              <p className="text-sm text-gray-600">
-                                <strong>Activated:</strong>{" "}
-                                {new Date(card.activation_date).toLocaleString()}
-                              </p>
-                            ) : null}
-
-                            {card.created_at ? (
-                              <p className="text-sm text-gray-600">
-                                <strong>Created:</strong>{" "}
-                                {new Date(card.created_at).toLocaleString()}
-                              </p>
-                            ) : null}
-
-                            {card.blocked_reason ? (
-                              <p className="text-sm text-gray-600">
-                                <strong>Blocked Reason:</strong>{" "}
-                                {card.blocked_reason}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleCopyTapUrl(card.card_uid)}
-                              className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
-                            >
-                              <Copy className="w-4 h-4" />
-                              Copy Tap URL
-                            </button>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-white rounded-xl shadow-md p-6">
-                <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-                  <h2 className="text-xl font-semibold">User Subscriptions</h2>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                <div className="mb-4">
-                  <div className="relative max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={userSearch}
-                      onChange={(e) => setUserSearch(e.target.value)}
-                      placeholder="Search email, name, username, plan..."
-                      className="border rounded-lg px-3 py-2 pl-10 w-full"
-                    />
-                  </div>
-                </div>
-
-                {filteredUsers.length === 0 ? (
-                  <p className="text-gray-600">No users found.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredUsers.map((user) => (
-                      <div key={user.user_id} className="border rounded-xl p-4">
-                        <div className="flex items-start justify-between gap-4 flex-wrap">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-semibold">
-                                {user.full_name || "Unnamed User"}
-                              </h3>
-                              {user.is_admin ? (
-                                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700">
-                                  <BadgeCheck className="w-3 h-3" />
-                                  Admin
-                                </span>
-                              ) : null}
-                            </div>
-
-                            <p className="text-sm text-gray-600">
-                              <strong>Email:</strong> {user.email || "No email"}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <strong>Username:</strong> {user.username || "—"}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <strong>Plan:</strong> {user.plan || "free"}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              <strong>Status:</strong> {user.status || "active"}
-                            </p>
-                          </div>
-
-                          <div className="flex gap-2 flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdatePlan(user.user_id, "free")
-                              }
-                              disabled={updatingUserId === user.user_id}
-                              className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
-                            >
-                              Set Free
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdatePlan(user.user_id, "pro")
-                              }
-                              disabled={updatingUserId === user.user_id}
-                              className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
-                            >
-                              Set Pro
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdatePlan(user.user_id, "business")
-                              }
-                              disabled={updatingUserId === user.user_id}
-                              className="border rounded-lg px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
-                            >
-                              Set Business
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </main>
+              </>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
