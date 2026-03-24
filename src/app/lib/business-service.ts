@@ -74,6 +74,19 @@ export type BusinessInviteRow = {
   created_at: string | null;
 };
 
+export type PendingOrganizationInviteRow = {
+  id: string;
+  organization_id: string;
+  organization_name: string;
+  organization_logo_url: string | null;
+  email: string;
+  role: string;
+  assigned_card_id: string | null;
+  assigned_card_uid: string | null;
+  status: string;
+  created_at: string | null;
+};
+
 export async function getMyAccountManagementStatus() {
   const { data, error } = await supabase.rpc("get_my_account_management_status");
   if (error) throw error;
@@ -159,19 +172,6 @@ export async function cancelMyBusinessInvite(inviteId: string) {
   return getSingle<BusinessInviteRow>(data);
 }
 
-export type PendingOrganizationInviteRow = {
-  id: string;
-  organization_id: string;
-  organization_name: string;
-  organization_logo_url: string | null;
-  email: string;
-  role: string;
-  assigned_card_id: string | null;
-  assigned_card_uid: string | null;
-  status: string;
-  created_at: string | null;
-};
-
 export async function getMyPendingOrganizationInvites() {
   const { data, error } = await supabase.rpc(
     "get_my_pending_organization_invites"
@@ -203,4 +203,32 @@ export async function declineMyOrganizationInvite(inviteId: string) {
 
   if (error) throw error;
   return data;
+}
+
+export async function assignCardByEmail(cardId: string, email: string) {
+  const { data, error } = await supabase.rpc("business_assign_card_by_email", {
+    p_card_id: cardId,
+    p_email: email,
+  });
+
+  if (error) throw error;
+  return getSingle<BusinessCardRow>(data);
+}
+
+export async function unassignBusinessCard(cardId: string) {
+  const { data, error } = await supabase.rpc("business_unassign_card", {
+    p_card_id: cardId,
+  });
+
+  if (error) throw error;
+  return getSingle<BusinessCardRow>(data);
+}
+
+export async function blockBusinessCard(cardId: string) {
+  const { data, error } = await supabase.rpc("business_block_card", {
+    p_card_id: cardId,
+  });
+
+  if (error) throw error;
+  return getSingle<BusinessCardRow>(data);
 }
