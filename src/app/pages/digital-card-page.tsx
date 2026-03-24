@@ -28,7 +28,8 @@ import {
   type SocialLinkRow,
   type PublicOrganizationBrandingRow,
 } from "../lib/profile-service";
-import { createLead } from "../lib/lead-service";
+import { createLeadFromCard } from "../lib/lead-service";
+import { logProfileView, logQrView } from "../lib/analytics-service";
 import { canUseLeads } from "../lib/subscription-service";
 import { supabase } from "../lib/supabase";
 import { buildPublicCardUrl } from "../lib/app-config";
@@ -112,6 +113,7 @@ function getThemeClasses(theme?: string | null) {
 
 export function DigitalCardPage() {
   const { username } = useParams();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState<ProfileRow | null>(null);
@@ -120,6 +122,7 @@ export function DigitalCardPage() {
     useState<PublicOrganizationBrandingRow | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [ownerPlan, setOwnerPlan] = useState("free");
+  const [cardUid, setCardUid] = useState<string | null>(null);
 
   const [leadName, setLeadName] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
@@ -141,6 +144,13 @@ export function DigitalCardPage() {
       try {
         const publicProfile = await getPublicProfileByUsername(username);
         setProfile(publicProfile);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const uid = urlParams.get("uid");
+
+        if (uid) {
+          setCardUid(uid);
+        }
 
         const [links, branding] = await Promise.all([
           getPublicSocialLinksByUserId(publicProfile.id),
@@ -171,6 +181,14 @@ export function DigitalCardPage() {
 
     load();
   }, [username]);
+
+  useEffect(() => {
+    if (!cardUid || !profile) return;
+
+    logProfileView(cardUid).catch(() => {
+      // analytics should not break public card rendering
+    });
+  }, [cardUid, profile]);
 
   const themeClasses = useMemo(
     () => getThemeClasses(profile?.theme),
@@ -244,8 +262,6 @@ END:VCARD`;
   const handleSubmitLead = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!profile) return;
-
     setLeadError("");
     setLeadSuccess("");
 
@@ -254,11 +270,16 @@ END:VCARD`;
       return;
     }
 
+    if (!cardUid) {
+      setLeadError("Missing card UID.");
+      return;
+    }
+
     try {
       setSubmittingLead(true);
 
-      await createLead({
-        user_id: profile.id,
+      await createLeadFromCard({
+        card_uid: cardUid,
         name: leadName,
         email: leadEmail,
         phone: leadPhone,
@@ -390,7 +411,17 @@ END:VCARD`;
               </button>
 
               <button
-                onClick={() => setShowQrModal(true)}
+                onClick={async () => {
+                  setShowQrModal(true);
+
+                  if (cardUid) {
+                    try {
+                      await logQrView(cardUid);
+                    } catch {
+                      // ignore analytics errors in UI
+                    }
+                  }
+                }}
                 className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-medium ${themeClasses.secondaryButton}`}
               >
                 <QrCode className="w-5 h-5" />

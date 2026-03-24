@@ -10,7 +10,7 @@ import {
   Package,
   Building2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import sabiLogo from "../assets/sabi-logo.png";
 import {
   getMySubscription,
@@ -24,6 +24,19 @@ import { getMyAccountManagementStatus } from "../lib/business-service";
 type SidebarProps = {
   isOpen?: boolean;
   onClose?: () => void;
+};
+
+type NavItem = {
+  label: string;
+  href: string;
+  icon: any;
+  visible: boolean;
+};
+
+type NavSection = {
+  title: string;
+  items: NavItem[];
+  visible: boolean;
 };
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
@@ -101,79 +114,123 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     };
   }, []);
 
-  if (!authChecked || !isAuthenticated) {
-    return null;
-  }
-
-  const navItems = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      visible: true,
-    },
-    {
-      label: "My Card",
-      href: "/profile",
-      icon: User,
-      visible: true,
-    },
-    {
-      label: "Plans",
-      href: "/plans",
-      icon: CreditCard,
-      visible: !managedByOrganization || canManageBilling,
-    },
-    {
-      label: "Business",
-      href: "/business",
-      icon: Building2,
-      visible: isBusinessOwner,
-    },
-    {
-      label: "Leads",
-      href: "/leads",
-      icon: Users,
-      visible: canUseLeads(plan),
-    },
-    {
-      label: "Analytics",
-      href: "/analytics",
-      icon: BarChart3,
-      visible: canUseAnalytics(plan),
-    },
-    {
-      label: "Admin",
-      href: "/admin",
-      icon: Shield,
-      visible: isAdmin,
-    },
-    {
-      label: "Admin Orders",
-      href: "/admin/orders",
-      icon: Package,
-      visible: isAdmin,
-    },
-    {
-      label: "Settings",
-      href: "/settings",
-      icon: Settings,
-      visible: true,
-    },
-    {
-      label: "Business Cards",
-      href: "/business/cards",
-      icon: CreditCard,
-      visible: isBusinessOwner,
-    },
-  ];
-
   const isActive = (href: string) => {
     if (href === "/admin") return location.pathname === "/admin";
     if (href === "/admin/orders") return location.pathname === "/admin/orders";
     if (href === "/business") return location.pathname === "/business";
+    if (href === "/business/cards")
+      return location.pathname === "/business/cards";
+    if (href === "/business-leads-analytics")
+      return location.pathname === "/business-leads-analytics";
     return location.pathname === href;
   };
+
+  const sections = useMemo<NavSection[]>(() => {
+    const generalItems: NavItem[] = [
+      {
+        label: "Dashboard",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+        visible: true,
+      },
+      {
+        label: "My Card",
+        href: "/profile",
+        icon: User,
+        visible: true,
+      },
+      {
+        label: "Leads",
+        href: "/leads",
+        icon: Users,
+        visible: canUseLeads(plan),
+      },
+      {
+        label: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
+        visible: canUseAnalytics(plan),
+      },
+    ];
+
+    const businessItems: NavItem[] = [
+      {
+        label: "Business Overview",
+        href: "/business",
+        icon: Building2,
+        visible: isBusinessOwner,
+      },
+      {
+        label: "Business Cards",
+        href: "/business/cards",
+        icon: CreditCard,
+        visible: isBusinessOwner,
+      },
+      {
+        label: "Business Leads & Analytics",
+        href: "/business-leads-analytics",
+        icon: BarChart3,
+        visible: isBusinessOwner,
+      },
+    ];
+
+    const adminItems: NavItem[] = [
+      {
+        label: "Admin",
+        href: "/admin",
+        icon: Shield,
+        visible: isAdmin,
+      },
+      {
+        label: "Admin Orders",
+        href: "/admin/orders",
+        icon: Package,
+        visible: isAdmin,
+      },
+    ];
+
+    const accountItems: NavItem[] = [
+      {
+        label: "Plans",
+        href: "/plans",
+        icon: CreditCard,
+        visible: !managedByOrganization || canManageBilling,
+      },
+      {
+        label: "Settings",
+        href: "/settings",
+        icon: Settings,
+        visible: true,
+      },
+    ];
+
+    return [
+      {
+        title: "General",
+        items: generalItems,
+        visible: generalItems.some((item) => item.visible),
+      },
+      {
+        title: "Business / Organization",
+        items: businessItems,
+        visible: businessItems.some((item) => item.visible),
+      },
+      {
+        title: "Admin",
+        items: adminItems,
+        visible: adminItems.some((item) => item.visible),
+      },
+      {
+        title: "Account",
+        items: accountItems,
+        visible: accountItems.some((item) => item.visible),
+      },
+    ];
+  }, [plan, isAdmin, isBusinessOwner, managedByOrganization, canManageBilling]);
+
+  if (!authChecked || !isAuthenticated) {
+    return null;
+  }
 
   return (
     <>
@@ -185,7 +242,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed lg:static z-50 top-0 left-0 h-full w-64 bg-white border-r transform transition-transform duration-200 ${
+        className={`fixed lg:static z-50 top-0 left-0 h-full w-64 bg-white border-r transform transition-transform duration-200 overflow-y-auto ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -200,29 +257,41 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           </Link>
         </div>
 
-        <nav className="p-4 space-y-2">
-          {navItems
-            .filter((item) => item.visible)
-            .map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
+        <nav className="p-4 space-y-6">
+          {sections
+            .filter((section) => section.visible)
+            .map((section) => (
+              <div key={section.title}>
+                <p className="px-4 mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  {section.title}
+                </p>
 
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={onClose}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    active
-                      ? "bg-indigo-50 text-indigo-700"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+                <div className="space-y-2">
+                  {section.items
+                    .filter((item) => item.visible)
+                    .map((item) => {
+                      const Icon = item.icon;
+                      const active = isActive(item.href);
+
+                      return (
+                        <Link
+                          key={item.href}
+                          to={item.href}
+                          onClick={onClose}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                            active
+                              ? "bg-indigo-50 text-indigo-700"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
         </nav>
       </aside>
     </>

@@ -18,6 +18,8 @@ import { ResetPasswordPage } from "./pages/reset-password-page";
 import { BusinessPage } from "./pages/business-page";
 import { BusinessCardsPage } from "./pages/business-cards-page";
 import { OrganizationInvitesPage } from "./pages/organization-invites-page";
+import { BusinessLeadsAnalyticsPage } from "./pages/business-leads-analytics-page";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -95,6 +97,11 @@ export const router = createBrowserRouter([
 {
   path:"/organization-invites" ,
   Component: OrganizationInvitesPage
+},
+{
+
+  path:"/business-leads-analytics",
+   Component: BusinessLeadsAnalyticsPage
 }
 
 ]);

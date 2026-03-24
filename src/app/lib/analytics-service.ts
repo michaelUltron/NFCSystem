@@ -11,6 +11,17 @@ export type CardTapRow = {
   created_at: string | null;
 };
 
+export type AnalyticsRow = {
+  id: string;
+  user_id: string | null;
+  organization_id: string | null;
+  event_type: string | null;
+  page_path: string | null;
+  card_uid: string | null;
+  visitor_identifier: string | null;
+  created_at: string | null;
+};
+
 function detectDevice(userAgent: string) {
   const ua = userAgent.toLowerCase();
 
@@ -34,6 +45,18 @@ function detectBrowser(userAgent: string) {
   return "Unknown Browser";
 }
 
+export function getVisitorIdentifier() {
+  const key = "sabicard_visitor_id";
+  let value = localStorage.getItem(key);
+
+  if (!value) {
+    value = crypto.randomUUID();
+    localStorage.setItem(key, value);
+  }
+
+  return value;
+}
+
 export async function logCardTap(cardUid: string) {
   const userAgent = navigator.userAgent || "";
   const device = detectDevice(userAgent);
@@ -49,6 +72,32 @@ export async function logCardTap(cardUid: string) {
 
   if (error) throw error;
   return data;
+}
+
+export async function logProfileView(cardUid: string) {
+  const visitorIdentifier = getVisitorIdentifier();
+
+  const { data, error } = await supabase.rpc("log_profile_view", {
+    p_card_uid: cardUid,
+    p_page_path: window.location.pathname + window.location.search,
+    p_visitor_identifier: visitorIdentifier,
+  });
+
+  if (error) throw error;
+  return data as AnalyticsRow;
+}
+
+export async function logQrView(cardUid: string) {
+  const visitorIdentifier = getVisitorIdentifier();
+
+  const { data, error } = await supabase.rpc("log_qr_view", {
+    p_card_uid: cardUid,
+    p_page_path: window.location.pathname + window.location.search,
+    p_visitor_identifier: visitorIdentifier,
+  });
+
+  if (error) throw error;
+  return data as AnalyticsRow;
 }
 
 export async function getMyTapHistory() {

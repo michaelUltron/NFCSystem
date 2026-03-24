@@ -232,3 +232,57 @@ export async function blockBusinessCard(cardId: string) {
   if (error) throw error;
   return getSingle<BusinessCardRow>(data);
 }
+
+export type BusinessLeadRow = {
+  id: string;
+  user_id: string | null;
+  organization_id: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  message: string | null;
+  created_at: string | null;
+  owner_full_name: string | null;
+  owner_email: string | null;
+};
+
+export type BusinessAnalyticsRow = {
+  id: string;
+  user_id: string | null;
+  organization_id: string | null;
+  event_type: string | null;
+  page_path: string | null;
+  card_uid: string | null;
+  visitor_identifier: string | null;
+  created_at: string | null;
+  owner_full_name: string | null;
+  owner_email: string | null;
+};
+
+export type BusinessLeadsAnalyticsSummary = {
+  total_leads: number;
+  total_analytics: number;
+  total_profile_views: number;
+  total_card_taps: number;
+};
+
+export async function getMyBusinessLeads() {
+  const { data, error } = await supabase.rpc("get_my_business_leads");
+  if (error) throw error;
+  return (data ?? []) as BusinessLeadRow[];
+}
+
+export async function getMyBusinessAnalytics() {
+  const { data, error } = await supabase.rpc("get_my_business_analytics");
+  if (error) throw error;
+  return (data ?? []) as BusinessAnalyticsRow[];
+}
+
+export async function getMyBusinessLeadsAnalyticsSummary() {
+  const { data, error } = await supabase.rpc(
+    "get_my_business_leads_analytics_summary"
+  );
+  if (error) throw error;
+  return getSingle<BusinessLeadsAnalyticsSummary>(data);
+}
