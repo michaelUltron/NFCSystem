@@ -12,8 +12,6 @@ export type LeadRow = {
   created_at: string | null;
 };
 
-
-// ✅ NEW — create lead from card UID (supports business)
 export async function createLeadFromCard(payload: {
   card_uid: string;
   name: string;
@@ -35,12 +33,33 @@ export async function createLeadFromCard(payload: {
   );
 
   if (error) throw error;
-
   return data;
 }
 
+export async function createLeadForProfile(payload: {
+  user_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  message?: string;
+}) {
+  const { data, error } = await supabase.rpc(
+    "create_public_lead_for_profile",
+    {
+      p_user_id: payload.user_id,
+      p_name: payload.name,
+      p_email: payload.email,
+      p_phone: payload.phone ?? null,
+      p_company: payload.company ?? null,
+      p_message: payload.message ?? null,
+    }
+  );
 
-// keep for old usage (optional)
+  if (error) throw error;
+  return data;
+}
+
 export async function getMyLeads() {
   const { data, error } = await supabase
     .from("leads")
@@ -50,9 +69,8 @@ export async function getMyLeads() {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as LeadRow[];
 }
-
 
 export async function getMyLeadCount() {
   const { count, error } = await supabase

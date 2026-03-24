@@ -28,7 +28,10 @@ import {
   type SocialLinkRow,
   type PublicOrganizationBrandingRow,
 } from "../lib/profile-service";
-import { createLeadFromCard } from "../lib/lead-service";
+import {
+  createLeadFromCard,
+  createLeadForProfile,
+} from "../lib/lead-service";
 import { logProfileView, logQrView } from "../lib/analytics-service";
 import { canUseLeads } from "../lib/subscription-service";
 import { supabase } from "../lib/supabase";
@@ -184,11 +187,11 @@ export function DigitalCardPage() {
   }, [username]);
 
   useEffect(() => {
-    if (!cardUid || !profile) return;
+    if (!profile) return;
 
-    logProfileView(cardUid).catch(() => {
-      // analytics failure should not break card rendering
-    });
+    if (cardUid) {
+      logProfileView(cardUid).catch(() => {});
+    }
   }, [cardUid, profile]);
 
   const themeClasses = useMemo(
@@ -268,6 +271,8 @@ END:VCARD`;
   const handleSubmitLead = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!profile) return;
+
     setLeadError("");
     setLeadSuccess("");
 
@@ -276,24 +281,28 @@ END:VCARD`;
       return;
     }
 
-    if (!cardUid) {
-      setLeadError(
-        "Missing card UID. Please open this card from the NFC tap or QR link."
-      );
-      return;
-    }
-
     try {
       setSubmittingLead(true);
 
-      await createLeadFromCard({
-        card_uid: cardUid,
-        name: leadName,
-        email: leadEmail,
-        phone: leadPhone,
-        company: leadCompany,
-        message: leadMessage,
-      });
+      if (cardUid) {
+        await createLeadFromCard({
+          card_uid: cardUid,
+          name: leadName,
+          email: leadEmail,
+          phone: leadPhone,
+          company: leadCompany,
+          message: leadMessage,
+        });
+      } else {
+        await createLeadForProfile({
+          user_id: profile.id,
+          name: leadName,
+          email: leadEmail,
+          phone: leadPhone,
+          company: leadCompany,
+          message: leadMessage,
+        });
+      }
 
       setLeadSuccess("Your details have been sent successfully.");
       setLeadName("");
