@@ -33,6 +33,7 @@ import { logProfileView, logQrView } from "../lib/analytics-service";
 import { canUseLeads } from "../lib/subscription-service";
 import { supabase } from "../lib/supabase";
 import { buildPublicCardUrl } from "../lib/app-config";
+import { getPendingCardUid } from "../lib/card-session";
 
 const socialIcons: Record<string, any> = {
   linkedin: FaLinkedin,
@@ -146,11 +147,11 @@ export function DigitalCardPage() {
         setProfile(publicProfile);
 
         const urlParams = new URLSearchParams(window.location.search);
-        const uid = urlParams.get("uid");
+        const uidFromUrl = urlParams.get("uid");
+        const uidFromSession = getPendingCardUid();
+        const resolvedUid = uidFromUrl || uidFromSession || null;
 
-        if (uid) {
-          setCardUid(uid);
-        }
+        setCardUid(resolvedUid);
 
         const [links, branding] = await Promise.all([
           getPublicSocialLinksByUserId(publicProfile.id),
@@ -186,7 +187,7 @@ export function DigitalCardPage() {
     if (!cardUid || !profile) return;
 
     logProfileView(cardUid).catch(() => {
-      // analytics should not break public card rendering
+      // analytics failure should not break card rendering
     });
   }, [cardUid, profile]);
 
@@ -206,8 +207,13 @@ export function DigitalCardPage() {
 
   const publicCardUrl = useMemo(() => {
     if (!username) return window.location.href;
+
+    if (cardUid) {
+      return `${buildPublicCardUrl(username)}?uid=${encodeURIComponent(cardUid)}`;
+    }
+
     return buildPublicCardUrl(username);
-  }, [username]);
+  }, [username, cardUid]);
 
   const displayCompany = useMemo(() => {
     return organizationBranding?.organization_name || profile?.company || "";
@@ -271,7 +277,9 @@ END:VCARD`;
     }
 
     if (!cardUid) {
-      setLeadError("Missing card UID.");
+      setLeadError(
+        "Missing card UID. Please open this card from the NFC tap or QR link."
+      );
       return;
     }
 
@@ -418,7 +426,7 @@ END:VCARD`;
                     try {
                       await logQrView(cardUid);
                     } catch {
-                      // ignore analytics errors in UI
+                      // ignore analytics errors
                     }
                   }
                 }}
