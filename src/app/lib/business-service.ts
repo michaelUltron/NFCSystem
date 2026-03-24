@@ -158,3 +158,49 @@ export async function cancelMyBusinessInvite(inviteId: string) {
   if (error) throw error;
   return getSingle<BusinessInviteRow>(data);
 }
+
+export type PendingOrganizationInviteRow = {
+  id: string;
+  organization_id: string;
+  organization_name: string;
+  organization_logo_url: string | null;
+  email: string;
+  role: string;
+  assigned_card_id: string | null;
+  assigned_card_uid: string | null;
+  status: string;
+  created_at: string | null;
+};
+
+export async function getMyPendingOrganizationInvites() {
+  const { data, error } = await supabase.rpc(
+    "get_my_pending_organization_invites"
+  );
+
+  if (error) throw error;
+  return (data ?? []) as PendingOrganizationInviteRow[];
+}
+
+export async function acceptMyOrganizationInvite(inviteId: string) {
+  const { data, error } = await supabase.rpc(
+    "accept_my_organization_invite",
+    {
+      p_invite_id: inviteId,
+    }
+  );
+
+  if (error) throw error;
+  return data;
+}
+
+export async function declineMyOrganizationInvite(inviteId: string) {
+  const { data, error } = await supabase.rpc(
+    "decline_my_organization_invite",
+    {
+      p_invite_id: inviteId,
+    }
+  );
+
+  if (error) throw error;
+  return data;
+}

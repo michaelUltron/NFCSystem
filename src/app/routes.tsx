@@ -17,7 +17,7 @@ import { AdminOrdersPage } from "./pages/admin-orders-page";
 import { ResetPasswordPage } from "./pages/reset-password-page";
 import { BusinessPage } from "./pages/business-page";
 import { BusinessCardsPage } from "./pages/business-cards-page";
-
+import { OrganizationInvitesPage } from "./pages/organization-invites-page";
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -91,5 +91,10 @@ export const router = createBrowserRouter([
   path: "/business/cards",
   Component: BusinessCardsPage,
 },
+
+{
+  path:"/organization-invites" ,
+  Component: OrganizationInvitesPage
+}
 
 ]);
