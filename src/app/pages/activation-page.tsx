@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { savePendingCardUid, clearPendingCardUid } from "../lib/card-session";
 import { activateCard, getMySubscriptionPlan } from "../lib/card-service";
-import { getCardTapDestination } from "../lib/tap-service";
+import {
+  getCardTapDestination,
+  buildCardPublicPath,
+} from "../lib/tap-service";
 import sabiLogo from "../assets/sabi-logo.png";
 
 export function ActivationPage() {
@@ -42,10 +45,9 @@ export function ActivationPage() {
             clearPendingCardUid();
             setMessage("This card is already activated. Opening the digital card...");
             setTimeout(() => {
-              navigate(
-                `/card/${cardInfo.username}?uid=${encodeURIComponent(cardUid)}`,
-                { replace: true }
-              );
+              navigate(buildCardPublicPath(cardInfo.username!, cardUid), {
+                replace: true,
+              });
             }, 800);
             return;
           }
@@ -128,9 +130,7 @@ export function ActivationPage() {
       if (updatedInfo.username) {
         setMessage("Card activated successfully. Opening your digital card...");
         setTimeout(() => {
-          navigate(
-            `/card/${updatedInfo.username}?uid=${encodeURIComponent(cardUid)}`
-          );
+          navigate(buildCardPublicPath(updatedInfo.username!, cardUid));
         }, 800);
         return;
       }
