@@ -18,6 +18,7 @@ import {
   type BusinessInviteRow,
   type BusinessCardRow,
 } from "../lib/business-service";
+import { uploadOrganizationLogo } from "../lib/organization-storage";
 import {
   Building2,
   Users,
@@ -27,6 +28,8 @@ import {
   UserPlus,
   Mail,
   XCircle,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
 
 type BrandingForm = {
@@ -48,6 +51,7 @@ export function BusinessPage() {
   const [loading, setLoading] = useState(true);
   const [savingBranding, setSavingBranding] = useState(false);
   const [savingInvite, setSavingInvite] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [overview, setOverview] = useState<BusinessOverviewRow | null>(null);
   const [branding, setBranding] = useState<OrganizationBranding | null>(null);
@@ -72,9 +76,20 @@ export function BusinessPage() {
     assigned_card_id: "",
   });
 
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+
   const availableCards = useMemo(() => {
     return cards.filter((card) => !card.assigned_user_id);
   }, [cards]);
+
+  const previewHeaderStyle = useMemo(() => {
+    const primary = brandingForm.brand_primary_color || "#4F46E5";
+    const secondary = brandingForm.brand_secondary_color || "#0F172A";
+
+    return {
+      background: `linear-gradient(135deg, ${primary}, ${secondary})`,
+    };
+  }, [brandingForm.brand_primary_color, brandingForm.brand_secondary_color]);
 
   const loadBusinessData = async () => {
     const [
@@ -176,6 +191,54 @@ export function BusinessPage() {
       setError(err.message || "Failed to update business branding.");
     } finally {
       setSavingBranding(false);
+    }
+  };
+
+  const handleUploadLogo = async () => {
+    try {
+      if (!logoFile) {
+        throw new Error("Please select a logo file first.");
+      }
+
+      if (!branding?.id) {
+        throw new Error("Organization not found.");
+      }
+
+      if (!logoFile.type.startsWith("image/")) {
+        throw new Error("Please upload a valid image file.");
+      }
+
+      if (logoFile.size > 3 * 1024 * 1024) {
+        throw new Error("Logo file must be 3MB or smaller.");
+      }
+
+      setUploadingLogo(true);
+      setError("");
+      setSuccessMessage("");
+
+      const publicUrl = await uploadOrganizationLogo(logoFile, branding.id);
+
+      const updated = await updateMyBusinessBranding({
+        name: brandingForm.name,
+        logo_url: publicUrl,
+        brand_primary_color: brandingForm.brand_primary_color,
+        brand_secondary_color: brandingForm.brand_secondary_color,
+        brand_tagline: brandingForm.brand_tagline,
+      });
+
+      setBranding(updated);
+      setBrandingForm((prev) => ({
+        ...prev,
+        logo_url: publicUrl,
+      }));
+
+      await loadBusinessData();
+      setLogoFile(null);
+      setSuccessMessage("Company logo uploaded successfully.");
+    } catch (err: any) {
+      setError(err.message || "Failed to upload logo.");
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -356,19 +419,56 @@ export function BusinessPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Logo URL
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Company Logo
                     </label>
+
                     <input
-                      type="text"
-                      value={brandingForm.logo_url}
-                      onChange={(e) =>
-                        handleBrandingChange("logo_url", e.target.value)
-                      }
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      placeholder="https://example.com/logo.png"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        setLogoFile(file);
+                      }}
+                      className="block w-full rounded-lg border border-gray-300 px-4 py-3 bg-white"
                     />
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleUploadLogo}
+                        disabled={!logoFile || uploadingLogo}
+                        className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 px-4 py-2 text-indigo-700 hover:bg-indigo-50 disabled:opacity-60"
+                      >
+                        <Upload className="w-4 h-4" />
+                        {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                      </button>
+
+                      {logoFile ? (
+                        <span className="text-sm text-gray-500">
+                          Selected: {logoFile.name}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {brandingForm.logo_url ? (
+                      <div className="border rounded-xl p-4 bg-gray-50">
+                        <p className="text-sm font-medium text-gray-700 mb-3">
+                          Current Logo
+                        </p>
+                        <img
+                          src={brandingForm.logo_url}
+                          alt="Business logo"
+                          className="h-20 w-20 rounded-lg object-cover border bg-white"
+                        />
+                      </div>
+                    ) : (
+                      <div className="border rounded-xl p-4 bg-gray-50 text-sm text-gray-500 flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
+                        No logo uploaded yet.
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -440,11 +540,7 @@ export function BusinessPage() {
 
                     <div
                       className="rounded-2xl p-6 text-white"
-                      style={{
-                        background: `linear-gradient(135deg, ${
-                          brandingForm.brand_primary_color || "#4F46E5"
-                        }, ${brandingForm.brand_secondary_color || "#0F172A"})`,
-                      }}
+                      style={previewHeaderStyle}
                     >
                       <div className="flex items-center gap-4">
                         {brandingForm.logo_url ? (
