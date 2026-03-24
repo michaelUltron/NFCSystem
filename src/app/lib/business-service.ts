@@ -1,5 +1,10 @@
 import { supabase } from "./supabase";
 
+function getSingle<T>(data: T | T[] | null): T | null {
+  if (!data) return null;
+  return Array.isArray(data) ? (data[0] ?? null) : data;
+}
+
 export type AccountManagementStatus = {
   user_id: string;
   organization_id: string | null;
@@ -35,38 +40,62 @@ export type OrganizationBranding = {
   updated_at: string | null;
 };
 
+export type BusinessCardRow = {
+  id: string;
+  card_uid: string;
+  status: string;
+  assigned_user_id: string | null;
+  assigned_email: string | null;
+  created_at: string | null;
+};
+
+export type BusinessMemberRow = {
+  member_id: string;
+  organization_id: string;
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  company: string | null;
+  position: string | null;
+  avatar_url: string | null;
+  role: string;
+  status: string;
+  created_at: string | null;
+};
+
+export type BusinessInviteRow = {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: string;
+  assigned_card_id: string | null;
+  assigned_card_uid: string | null;
+  status: string;
+  created_at: string | null;
+};
+
 export async function getMyAccountManagementStatus() {
-  const { data, error } = await supabase.rpc(
-    "get_my_account_management_status"
-  );
-
+  const { data, error } = await supabase.rpc("get_my_account_management_status");
   if (error) throw error;
-
-  const row = Array.isArray(data) ? data[0] : data;
-  return (row ?? null) as AccountManagementStatus | null;
+  return getSingle<AccountManagementStatus>(data);
 }
 
 export async function ensureMyBusinessOrganization() {
   const { data, error } = await supabase.rpc("ensure_my_business_organization");
-
   if (error) throw error;
-  return data as OrganizationBranding;
+  return getSingle<OrganizationBranding>(data);
 }
 
 export async function getMyBusinessOverview() {
   const { data, error } = await supabase.rpc("get_my_business_overview");
-
   if (error) throw error;
-
-  const row = Array.isArray(data) ? data[0] : data;
-  return (row ?? null) as BusinessOverviewRow | null;
+  return getSingle<BusinessOverviewRow>(data);
 }
 
 export async function getMyBusinessBranding() {
   const { data, error } = await supabase.rpc("get_my_business_branding");
-
   if (error) throw error;
-  return data as OrganizationBranding;
+  return getSingle<OrganizationBranding>(data);
 }
 
 export async function updateMyBusinessBranding(payload: {
@@ -85,5 +114,47 @@ export async function updateMyBusinessBranding(payload: {
   });
 
   if (error) throw error;
-  return data as OrganizationBranding;
+  return getSingle<OrganizationBranding>(data);
+}
+
+export async function getMyBusinessCards() {
+  const { data, error } = await supabase.rpc("get_my_business_cards");
+  if (error) throw error;
+  return (data ?? []) as BusinessCardRow[];
+}
+
+export async function getMyBusinessMembers() {
+  const { data, error } = await supabase.rpc("get_my_business_members");
+  if (error) throw error;
+  return (data ?? []) as BusinessMemberRow[];
+}
+
+export async function getMyBusinessInvites() {
+  const { data, error } = await supabase.rpc("get_my_business_invites");
+  if (error) throw error;
+  return (data ?? []) as BusinessInviteRow[];
+}
+
+export async function createMyBusinessInvite(payload: {
+  email: string;
+  role: string;
+  assigned_card_id?: string | null;
+}) {
+  const { data, error } = await supabase.rpc("create_my_business_invite", {
+    p_email: payload.email,
+    p_role: payload.role,
+    p_assigned_card_id: payload.assigned_card_id ?? null,
+  });
+
+  if (error) throw error;
+  return getSingle<BusinessInviteRow>(data);
+}
+
+export async function cancelMyBusinessInvite(inviteId: string) {
+  const { data, error } = await supabase.rpc("cancel_my_business_invite", {
+    p_invite_id: inviteId,
+  });
+
+  if (error) throw error;
+  return getSingle<BusinessInviteRow>(data);
 }

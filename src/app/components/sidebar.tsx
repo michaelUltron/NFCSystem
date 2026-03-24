@@ -160,6 +160,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       icon: Settings,
       visible: true,
     },
+    {
+      label: "Business Cards",
+      href: "/business/cards",
+      icon: CreditCard,
+      visible: isBusinessOwner,
+    },
   ];
 
   const isActive = (href: string) => {
