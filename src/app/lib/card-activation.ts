@@ -1,20 +1,46 @@
-import { supabase } from "./supabase";
+import { activateCard, getCurrentUserProfile, getMySubscriptionPlan } from "./card-service";
+import { getPendingCardUid, clearPendingCardUid } from "./card-session";
 
-export async function activateCard(cardUid: string) {
-  const { data, error } = await supabase.rpc("activate_card", {
-    p_card_uid: cardUid,
-  });
+export type ActivationResult = {
+  success: boolean;
+  mode: "personal" | "business_inventory" | null;
+  message: string;
+  card?: any;
+};
 
-  if (error) throw error;
-  return data;
-}
+export async function processPendingCardActivation(): Promise<ActivationResult | null> {
+  const pendingUid = getPendingCardUid();
 
-export async function getMyCards() {
-  const { data, error } = await supabase
-    .from("cards")
-    .select("*")
-    .order("created_at", { ascending: false });
+  if (!pendingUid) return null;
 
-  if (error) throw error;
-  return data;
+  const profile = await getCurrentUserProfile();
+  if (!profile) {
+    return null;
+  }
+
+  const subscription = await getMySubscriptionPlan();
+
+  try {
+    const activatedCard = await activateCard(pendingUid);
+    clearPendingCardUid();
+
+    const isBusiness =
+      subscription?.plan?.toLowerCase() === "business" &&
+      subscription?.status?.toLowerCase() === "active";
+
+    return {
+      success: true,
+      mode: isBusiness ? "business_inventory" : "personal",
+      message: isBusiness
+        ? "Card added to your business inventory."
+        : "Card activated to your account.",
+      card: activatedCard,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      mode: null,
+      message: error?.message || "Failed to activate card.",
+    };
+  }
 }

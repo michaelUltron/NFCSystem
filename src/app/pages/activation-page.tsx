@@ -1,9 +1,9 @@
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { CreditCard, CheckCircle, UserCircle } from "lucide-react";
+import { CreditCard, CheckCircle, UserCircle, Building2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { savePendingCardUid, clearPendingCardUid } from "../lib/card-session";
-import { activateCard } from "../lib/card-service";
+import { activateCard, getMySubscriptionPlan } from "../lib/card-service";
 import { getCardTapDestination } from "../lib/tap-service";
 import sabiLogo from "../assets/sabi-logo.png";
 
@@ -19,6 +19,7 @@ export function ActivationPage() {
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [cardAlreadyOwned, setCardAlreadyOwned] = useState(false);
+  const [isBusinessAccount, setIsBusinessAccount] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -40,11 +41,15 @@ export function ActivationPage() {
 
           if (cardInfo.username) {
             setMessage("This card is already activated. Opening the digital card...");
-            setTimeout(() => navigate(`/card/${cardInfo.username}`, { replace: true }), 800);
+            setTimeout(() => {
+              navigate(`/card/${cardInfo.username}`, { replace: true });
+            }, 800);
             return;
           }
 
-          setError("This card is already assigned to another user.");
+          setMessage(
+            "This card is already activated under a business account and is currently in inventory or assigned internally."
+          );
           setLoading(false);
           return;
         }
@@ -74,9 +79,23 @@ export function ActivationPage() {
         }
 
         setCurrentUser(user);
-        setMessage(
-          "You are signed in. Confirm if you want to activate this card under your account."
-        );
+
+        const subscription = await getMySubscriptionPlan();
+        const isBusiness =
+          subscription?.plan?.toLowerCase() === "business" &&
+          subscription?.status?.toLowerCase() === "active";
+
+        setIsBusinessAccount(isBusiness);
+
+        if (isBusiness) {
+          setMessage(
+            "You are signed in with a business account. Confirm to add this card to your business inventory."
+          );
+        } else {
+          setMessage(
+            "You are signed in. Confirm if you want to activate this card under your account."
+          );
+        }
       } catch (err: any) {
         clearPendingCardUid();
         setError(err.message || "Activation failed.");
@@ -92,7 +111,11 @@ export function ActivationPage() {
     try {
       setActivating(true);
       setError("");
-      setMessage("Activating your card...");
+      setMessage(
+        isBusinessAccount
+          ? "Adding card to your business inventory..."
+          : "Activating your card..."
+      );
 
       await activateCard(cardUid);
       clearPendingCardUid();
@@ -102,6 +125,12 @@ export function ActivationPage() {
       if (updatedInfo.username) {
         setMessage("Card activated successfully. Opening your digital card...");
         setTimeout(() => navigate(`/card/${updatedInfo.username}`), 800);
+        return;
+      }
+
+      if (isBusinessAccount) {
+        setMessage("Card added to your business inventory successfully.");
+        setTimeout(() => navigate("/business"), 900);
         return;
       }
 
@@ -172,6 +201,15 @@ export function ActivationPage() {
                   <span className="font-medium">Signed in as</span>
                 </div>
                 <p>{currentUser.email}</p>
+
+                {isBusinessAccount ? (
+                  <div className="mt-3 flex items-center gap-2 text-indigo-700">
+                    <Building2 className="w-4 h-4" />
+                    <span className="text-xs font-medium">
+                      Business account detected
+                    </span>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -209,7 +247,13 @@ export function ActivationPage() {
                   disabled={activating}
                   className="block w-full text-center bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-6 py-3 font-medium disabled:opacity-60"
                 >
-                  {activating ? "Activating..." : "Confirm Activation"}
+                  {activating
+                    ? isBusinessAccount
+                      ? "Adding to Inventory..."
+                      : "Activating..."
+                    : isBusinessAccount
+                    ? "Add to Business Inventory"
+                    : "Confirm Activation"}
                 </button>
 
                 <button
