@@ -7,8 +7,14 @@ export type CardTapDestination = {
 };
 
 export async function getCardTapDestination(cardUid: string) {
+  const cleanedUid = cardUid.trim();
+
+  if (!cleanedUid) {
+    throw new Error("Missing card UID.");
+  }
+
   const { data, error } = await supabase.rpc("get_card_tap_destination", {
-    p_card_uid: cardUid,
+    p_card_uid: cleanedUid,
   });
 
   if (error) throw error;
@@ -20,4 +26,24 @@ export async function getCardTapDestination(cardUid: string) {
   }
 
   return row as CardTapDestination;
+}
+
+/**
+ * Builds the final public card URL while preserving the card UID.
+ * Example:
+ *   /card/jane-doe?uid=TC000123
+ */
+export function buildCardPublicPath(username: string, cardUid: string) {
+  const cleanedUsername = username.trim();
+  const cleanedUid = cardUid.trim();
+
+  if (!cleanedUsername) {
+    throw new Error("Missing username.");
+  }
+
+  if (!cleanedUid) {
+    throw new Error("Missing card UID.");
+  }
+
+  return `/card/${cleanedUsername}?uid=${encodeURIComponent(cleanedUid)}`;
 }

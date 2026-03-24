@@ -36,13 +36,16 @@ export function ActivationPage() {
         const cardInfo = await getCardTapDestination(cardUid);
 
         if (cardInfo.status === "active") {
-          clearPendingCardUid();
           setCardAlreadyOwned(true);
 
           if (cardInfo.username) {
+            clearPendingCardUid();
             setMessage("This card is already activated. Opening the digital card...");
             setTimeout(() => {
-              navigate(`/card/${cardInfo.username}`, { replace: true });
+              navigate(
+                `/card/${cardInfo.username}?uid=${encodeURIComponent(cardUid)}`,
+                { replace: true }
+              );
             }, 800);
             return;
           }
@@ -118,24 +121,32 @@ export function ActivationPage() {
       );
 
       await activateCard(cardUid);
-      clearPendingCardUid();
+      savePendingCardUid(cardUid);
 
       const updatedInfo = await getCardTapDestination(cardUid);
 
       if (updatedInfo.username) {
         setMessage("Card activated successfully. Opening your digital card...");
-        setTimeout(() => navigate(`/card/${updatedInfo.username}`), 800);
+        setTimeout(() => {
+          navigate(
+            `/card/${updatedInfo.username}?uid=${encodeURIComponent(cardUid)}`
+          );
+        }, 800);
         return;
       }
 
       if (isBusinessAccount) {
         setMessage("Card added to your business inventory successfully.");
-        setTimeout(() => navigate("/business"), 900);
+        setTimeout(() => {
+          navigate("/business/cards");
+        }, 900);
         return;
       }
 
       setMessage("Card activated successfully. Redirecting to dashboard...");
-      setTimeout(() => navigate("/dashboard"), 800);
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 800);
     } catch (err: any) {
       clearPendingCardUid();
       setError(
