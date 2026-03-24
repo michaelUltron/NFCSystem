@@ -9,6 +9,7 @@ import {
   Send,
   QrCode,
   X,
+  Building2,
 } from "lucide-react";
 import {
   FaLinkedin,
@@ -22,8 +23,10 @@ import sabiLogo from "../assets/sabi-logo.png";
 import {
   getPublicProfileByUsername,
   getPublicSocialLinksByUserId,
+  getPublicProfileBrandingByUserId,
   type ProfileRow,
   type SocialLinkRow,
+  type PublicOrganizationBrandingRow,
 } from "../lib/profile-service";
 import { createLead } from "../lib/lead-service";
 import { canUseLeads } from "../lib/subscription-service";
@@ -113,6 +116,8 @@ export function DigitalCardPage() {
   const [error, setError] = useState("");
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [socials, setSocials] = useState<SocialLinkRow[]>([]);
+  const [organizationBranding, setOrganizationBranding] =
+    useState<PublicOrganizationBrandingRow | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [ownerPlan, setOwnerPlan] = useState("free");
 
@@ -137,22 +142,26 @@ export function DigitalCardPage() {
         const publicProfile = await getPublicProfileByUsername(username);
         setProfile(publicProfile);
 
-        const links = await getPublicSocialLinksByUserId(publicProfile.id);
+        const [links, branding] = await Promise.all([
+          getPublicSocialLinksByUserId(publicProfile.id),
+          getPublicProfileBrandingByUserId(publicProfile.id),
+        ]);
+
         setSocials(links);
+        setOrganizationBranding(branding);
 
- const { data: publicPlan, error: publicPlanError } = await supabase.rpc(
-  "get_public_user_plan",
-  {
-    p_user_id: publicProfile.id,
-  }
-);
+        const { data: publicPlan, error: publicPlanError } = await supabase.rpc(
+          "get_public_user_plan",
+          {
+            p_user_id: publicProfile.id,
+          }
+        );
 
-if (!publicPlanError && publicPlan) {
-  setOwnerPlan(publicPlan);
-} else {
-  setOwnerPlan("free");
-}
-
+        if (!publicPlanError && publicPlan) {
+          setOwnerPlan(publicPlan);
+        } else {
+          setOwnerPlan("free");
+        }
       } catch (err: any) {
         setError(err.message || "Card not found.");
       } finally {
@@ -177,10 +186,37 @@ if (!publicPlanError && publicPlan) {
       .join("");
   }, [profile?.full_name]);
 
-const publicCardUrl = useMemo(() => {
-  if (!username) return window.location.href;
-  return buildPublicCardUrl(username);
-}, [username]);
+  const publicCardUrl = useMemo(() => {
+    if (!username) return window.location.href;
+    return buildPublicCardUrl(username);
+  }, [username]);
+
+  const displayCompany = useMemo(() => {
+    return organizationBranding?.organization_name || profile?.company || "";
+  }, [organizationBranding, profile?.company]);
+
+  const displayTagline = useMemo(() => {
+    return organizationBranding?.brand_tagline || "";
+  }, [organizationBranding]);
+
+  const brandHeaderStyle = useMemo(() => {
+    if (
+      organizationBranding?.brand_primary_color &&
+      organizationBranding?.brand_secondary_color
+    ) {
+      return {
+        background: `linear-gradient(to right, ${organizationBranding.brand_primary_color}, ${organizationBranding.brand_secondary_color})`,
+      };
+    }
+
+    if (organizationBranding?.brand_primary_color) {
+      return {
+        background: organizationBranding.brand_primary_color,
+      };
+    }
+
+    return undefined;
+  }, [organizationBranding]);
 
   const handleSaveContact = () => {
     if (!profile) return;
@@ -188,7 +224,7 @@ const publicCardUrl = useMemo(() => {
     const vcard = `BEGIN:VCARD
 VERSION:3.0
 FN:${profile.full_name ?? ""}
-ORG:${profile.company ?? ""}
+ORG:${displayCompany}
 TITLE:${profile.position ?? ""}
 TEL:${profile.phone ?? ""}
 EMAIL:${profile.email ?? ""}
@@ -280,7 +316,10 @@ END:VCARD`;
         <div
           className={`max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden ${themeClasses.cardBg}`}
         >
-          <div className={`h-32 ${themeClasses.headerBg}`}></div>
+          <div
+            className={`h-32 ${!brandHeaderStyle ? themeClasses.headerBg : ""}`}
+            style={brandHeaderStyle}
+          ></div>
 
           <div className="px-6 pb-8">
             <div className="flex justify-center -mt-16 mb-4">
@@ -301,14 +340,38 @@ END:VCARD`;
               </div>
             </div>
 
+            {organizationBranding ? (
+              <div className="flex flex-col items-center mb-4">
+                {organizationBranding.organization_logo_url ? (
+                  <img
+                    src={organizationBranding.organization_logo_url}
+                    alt={organizationBranding.organization_name}
+                    className="w-16 h-16 rounded-xl object-cover border bg-white shadow-sm mb-3"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-xl border bg-white shadow-sm flex items-center justify-center mb-3">
+                    <Building2 className="w-8 h-8 text-gray-500" />
+                  </div>
+                )}
+              </div>
+            ) : null}
+
             <div className="text-center mb-6">
               <h1 className="text-3xl font-bold mb-2">
                 {profile.full_name || "Unnamed User"}
               </h1>
+
               <p className={`text-lg mb-1 ${themeClasses.mutedText}`}>
                 {profile.position || ""}
               </p>
-              <p className={themeClasses.mutedText}>{profile.company || ""}</p>
+
+              <p className={themeClasses.mutedText}>{displayCompany}</p>
+
+              {displayTagline ? (
+                <p className={`text-sm mt-1 ${themeClasses.mutedText}`}>
+                  {displayTagline}
+                </p>
+              ) : null}
             </div>
 
             {profile.bio ? (
