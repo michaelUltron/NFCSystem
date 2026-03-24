@@ -16,6 +16,9 @@ import {
   CheckCircle,
   ArrowRight,
   Info,
+  X,
+  ShieldCheck,
+  FileText,
 } from "lucide-react";
 
 type PlanSettingRow = {
@@ -39,9 +42,12 @@ type LandingPlan = {
   isActive: boolean;
 };
 
+type ModalType = "privacy" | "terms" | null;
+
 export function LandingPage() {
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [plans, setPlans] = useState<LandingPlan[]>([]);
+  const [openModal, setOpenModal] = useState<ModalType>(null);
 
   useEffect(() => {
     const loadPlans = async () => {
@@ -68,9 +74,9 @@ export function LandingPage() {
             features: [
               "1 Digital Card",
               "Basic card experience",
+              "Basic profile sharing",
               "No analytics",
               "No lead capture",
-              "No theme customization",
             ],
             buttonLabel: "Get Started",
             isActive: settingsMap.get("free")?.is_active ?? true,
@@ -82,10 +88,10 @@ export function LandingPage() {
             suffix: "/30 days",
             features: [
               "Unlimited Digital Cards",
-              "Advanced Analytics",
-              "Lead Capture",
-              "Theme Customization",
-              "Growth-focused features",
+              "Advanced analytics",
+              "Lead capture",
+              "Theme customization",
+              "Better personal branding tools",
             ],
             buttonLabel: "Choose Pro",
             popular: true,
@@ -98,10 +104,10 @@ export function LandingPage() {
             suffix: "/30 days",
             features: [
               "Everything in Pro",
-              "Unlimited Cards",
-              "Lead Capture",
-              "Analytics",
-              "Ready for teams later",
+              "Shared business card inventory",
+              "Organization branding",
+              "Team invites and card assignment",
+              "Business-ready lead capture and analytics",
             ],
             buttonLabel: "Choose Business",
             isActive: settingsMap.get("business")?.is_active ?? true,
@@ -109,7 +115,7 @@ export function LandingPage() {
         ];
 
         setPlans(builtPlans);
-      } catch (err) {
+      } catch {
         setPlans([
           {
             key: "free",
@@ -119,9 +125,9 @@ export function LandingPage() {
             features: [
               "1 Digital Card",
               "Basic card experience",
+              "Basic profile sharing",
               "No analytics",
               "No lead capture",
-              "No theme customization",
             ],
             buttonLabel: "Get Started",
             isActive: true,
@@ -133,10 +139,10 @@ export function LandingPage() {
             suffix: "/30 days",
             features: [
               "Unlimited Digital Cards",
-              "Advanced Analytics",
-              "Lead Capture",
-              "Theme Customization",
-              "Growth-focused features",
+              "Advanced analytics",
+              "Lead capture",
+              "Theme customization",
+              "Better personal branding tools",
             ],
             buttonLabel: "Choose Pro",
             popular: true,
@@ -149,10 +155,10 @@ export function LandingPage() {
             suffix: "/30 days",
             features: [
               "Everything in Pro",
-              "Unlimited Cards",
-              "Lead Capture",
-              "Analytics",
-              "Ready for teams later",
+              "Shared business card inventory",
+              "Organization branding",
+              "Team invites and card assignment",
+              "Business-ready lead capture and analytics",
             ],
             buttonLabel: "Choose Business",
             isActive: true,
@@ -168,11 +174,12 @@ export function LandingPage() {
 
   const pricingPlans = useMemo(() => plans, [plans]);
 
+  const closeModal = () => setOpenModal(null);
+
   return (
     <div className="min-h-screen bg-white scroll-smooth">
       <Navbar />
 
-      {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-16 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -226,7 +233,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section id="features" className="bg-gray-50 py-16 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -275,7 +281,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works Section */}
       <section id="how-it-works" className="py-16 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -328,7 +333,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
       <section id="pricing" className="bg-gray-50 py-16 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
@@ -437,7 +441,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold mb-4">
@@ -456,7 +459,272 @@ export function LandingPage() {
         </div>
       </section>
 
+      <section className="border-t border-gray-200 py-8">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="text-sm text-gray-500">
+            By using SabiCard, you agree to our Privacy Policy and Terms of Use.
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setOpenModal("privacy")}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Privacy Policy
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setOpenModal("terms")}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <FileText className="w-4 h-4" />
+              Terms of Use
+            </button>
+          </div>
+        </div>
+      </section>
+
       <Footer />
+
+      {openModal === "privacy" ? (
+        <PolicyModal
+          title="Privacy Policy"
+          onClose={closeModal}
+        >
+          <div className="space-y-4 text-sm text-gray-700">
+            <p>
+              SabiCard respects your privacy and is committed to protecting personal data in accordance with applicable Philippine law, including the Data Privacy Act of 2012 and its implementing rules and regulations. 
+            </p>
+
+            <div>
+              <h3 className="font-semibold mb-1">1. Information We Collect</h3>
+              <p>
+                We may collect account information such as your name, email address, phone number, username, company, job title, profile photo, website, social links, and other profile details you choose to publish through your digital card. For paid plans, we may also process billing and transaction records through payment providers. If lead capture is enabled, we may collect visitor-submitted names, emails, phone numbers, company details, and messages.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">2. How We Use Information</h3>
+              <p>
+                We use personal data to create and manage user accounts, activate and manage NFC cards, display public digital card profiles, process plan purchases, support analytics, enable team and business features, generate QR codes, capture leads, detect misuse, enforce our platform rules, and improve our services. We may also use contact information for service notices, security alerts, billing reminders, and product-related communications.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">3. Public Profile Information</h3>
+              <p>
+                Information you choose to publish on your digital card may be visible to anyone who taps your NFC card, scans your QR code, or accesses your public card link. You are responsible for the accuracy and appropriateness of content you choose to make public.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">4. Legal Basis and Consent</h3>
+              <p>
+                Where required, SabiCard processes personal data on the basis of consent, contractual necessity, legal obligation, and our legitimate business interests, including platform security, fraud prevention, service continuity, and customer support, subject to applicable Philippine law and valid-consent standards recognized by the National Privacy Commission. 
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">5. Sharing of Information</h3>
+              <p>
+                We may share data with service providers that support payment processing, hosting, cloud storage, analytics, communications, and platform operations, but only to the extent reasonably necessary for the service. We may also disclose information where required by law, lawful order, regulation, subpoena, government request, or to protect SabiCard, our users, or the public from fraud, abuse, security threats, or legal claims.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">6. Business and Team Accounts</h3>
+              <p>
+                If your account is managed under a Business plan, the business owner or authorized administrators may manage branding, card assignment, business inventory, team invitations, and related organization-level settings. In such cases, certain profile and card-management actions may be controlled by the organization rather than the individual member.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">7. Data Retention</h3>
+              <p>
+                We retain information for as long as reasonably necessary for account administration, transaction documentation, customer support, fraud prevention, legal compliance, dispute resolution, and enforcement of our agreements. We may retain backup, archived, or security-related records for a longer period where reasonably required.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">8. Security</h3>
+              <p>
+                We use reasonable administrative, organizational, physical, and technical safeguards to protect data. However, no system is completely secure, and SabiCard does not warrant that access to the platform will always be uninterrupted, timely, secure, or error-free.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">9. Your Rights</h3>
+              <p>
+                Subject to applicable law, you may request access to, correction of, or deletion of personal data, object to certain processing, or raise privacy concerns. Requests may be subject to identity verification, security checks, contractual obligations, record-retention requirements, and our legitimate need to maintain legal and operational records. Data-subject rights are recognized under the Philippine Data Privacy Act. 
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">10. Children and Restricted Use</h3>
+              <p>
+                SabiCard is not intended for unlawful, deceptive, harmful, or unauthorized uses. Users are responsible for ensuring they have the legal right to publish personal data, business information, and third-party materials uploaded to the platform.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">11. Updates to this Policy</h3>
+              <p>
+                We may revise this Privacy Policy at any time. Updated versions become effective upon posting on the platform or associated pages. Continued use of SabiCard after changes are posted constitutes your acknowledgment of the revised policy, to the extent allowed by law.
+              </p>
+            </div>
+          </div>
+        </PolicyModal>
+      ) : null}
+
+      {openModal === "terms" ? (
+        <PolicyModal
+          title="Terms of Use"
+          onClose={closeModal}
+        >
+          <div className="space-y-4 text-sm text-gray-700">
+            <p>
+              These Terms of Use govern access to and use of SabiCard, including its website, digital card profiles, NFC card activation features, lead capture tools, analytics, subscription plans, business account features, and related services. Philippine e-commerce guidance expects clear disclosures and online terms, and these Terms are intended to serve that function for SabiCard.
+            </p>
+
+            <div>
+              <h3 className="font-semibold mb-1">1. Acceptance of Terms</h3>
+              <p>
+                By creating an account, purchasing a plan, activating a card, using the platform, or accessing any public SabiCard profile, you agree to these Terms and our Privacy Policy.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">2. Eligibility and Account Responsibility</h3>
+              <p>
+                You must provide accurate and current information and are responsible for all activities under your account. You are responsible for maintaining the confidentiality of your credentials and for all actions taken through your login, whether or not authorized by you, unless applicable law provides otherwise.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">3. Service Description</h3>
+              <p>
+                SabiCard provides digital profile pages, NFC card activation, QR-based sharing, lead capture, analytics, paid plan upgrades, and business team-management tools. Features may vary by plan, account type, region, device compatibility, and technical availability.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">4. Plans, Billing, and Renewals</h3>
+              <p>
+                Free, Pro, and Business plans may have different limitations and features. Unless otherwise stated on the platform at the time of purchase, paid access currently operates as a one-time payment for a stated billing period. SabiCard may change pricing, feature sets, limits, or availability at any time before a new purchase or renewal.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">5. NFC Cards and Activation</h3>
+              <p>
+                Activation of an NFC card links that card to an account, profile, organization, or business inventory depending on the plan and platform rules. SabiCard may refuse, suspend, reverse, block, or reassign activation where we reasonably suspect fraud, misuse, unauthorized transfer, duplicate registration, security risk, policy violation, or payment irregularity.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">6. Business Accounts</h3>
+              <p>
+                Business plans may allow organization branding, centralized inventory, team invitations, role-based card assignment, and organization-managed member accounts. Business owners and authorized administrators are responsible for managing invited users, assigned cards, internal permissions, and organization content. SabiCard may treat actions taken by authorized business administrators as actions of the organization.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">7. User Content and Conduct</h3>
+              <p>
+                You must not use SabiCard for unlawful, fraudulent, deceptive, defamatory, infringing, abusive, harmful, misleading, spam-related, or unauthorized commercial activity. You represent that you own or have the right to use all content, trademarks, images, links, and data you upload or publish. SabiCard may remove, restrict, or disable content or accounts that we believe violate these Terms, applicable law, payment-provider rules, or platform safety standards.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">8. Leads, Analytics, and Availability</h3>
+              <p>
+                Lead capture and analytics are provided on an “as available” basis. SabiCard does not guarantee the accuracy, completeness, delivery, conversion, or business value of leads, analytics, tap counts, or visitor actions. Temporary outages, delays, filtering, browser/device behavior, and third-party infrastructure may affect results.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">9. Intellectual Property</h3>
+              <p>
+                SabiCard and all related software, designs, interfaces, workflows, branding, text, graphics, and platform logic remain the property of SabiCard or its licensors. Except as expressly allowed, you may not copy, distribute, resell, reverse engineer, modify, or create derivative works from the service.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">10. Suspension and Termination</h3>
+              <p>
+                SabiCard may suspend, block, restrict, terminate, or investigate accounts, cards, organizations, or transactions at any time where we reasonably determine there is policy abuse, security risk, fraudulent activity, payment dispute, legal exposure, platform misuse, or conduct harmful to SabiCard, its users, or third parties.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">11. Disclaimers</h3>
+              <p>
+                The service is provided on an “as is” and “as available” basis. To the fullest extent permitted by law, SabiCard disclaims warranties of merchantability, fitness for a particular purpose, non-infringement, uninterrupted access, error-free performance, data preservation, compatibility, and expected commercial outcomes.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">12. Limitation of Liability</h3>
+              <p>
+                To the fullest extent permitted by law, SabiCard will not be liable for indirect, incidental, special, exemplary, punitive, or consequential damages, or for loss of profits, revenue, goodwill, data, customers, opportunities, or business interruption arising from use of or inability to use the service. Where liability cannot be excluded, SabiCard’s aggregate liability shall not exceed the amount paid by the user to SabiCard for the specific service period directly giving rise to the claim.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">13. Indemnity</h3>
+              <p>
+                You agree to defend, indemnify, and hold harmless SabiCard, its owners, affiliates, staff, and service providers from claims, losses, liabilities, damages, penalties, costs, and expenses arising from your content, your misuse of the platform, your violation of these Terms, your infringement of third-party rights, or your violation of law.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">14. Governing Law and Venue</h3>
+              <p>
+                These Terms are governed by the laws of the Republic of the Philippines. Any dispute arising out of or relating to SabiCard shall be subject to the applicable laws, rules, and competent courts of the Philippines, unless another dispute process is required by mandatory law.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">15. Changes to Terms</h3>
+              <p>
+                We may modify these Terms at any time by posting the revised version on the platform. Continued use of SabiCard after the effective date of the revised Terms constitutes acceptance of the changes, to the extent permitted by law. 
+              </p>
+            </div>
+          </div>
+        </PolicyModal>
+      ) : null}
+    </div>
+  );
+}
+
+type PolicyModalProps = {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+};
+
+function PolicyModal({ title, onClose, children }: PolicyModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 px-4 py-6 flex items-center justify-center">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-hidden bg-white rounded-2xl shadow-2xl">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="text-xl font-bold">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 hover:bg-gray-100"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto max-h-[calc(90vh-80px)] px-6 py-6">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
