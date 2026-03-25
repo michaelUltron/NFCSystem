@@ -87,6 +87,7 @@ export async function logProfileView(cardUid: string) {
   return data as AnalyticsRow;
 }
 
+
 export async function logProfileViewForProfile(userId: string) {
   const visitorIdentifier = getVisitorIdentifier();
 
