@@ -87,6 +87,19 @@ export async function logProfileView(cardUid: string) {
   return data as AnalyticsRow;
 }
 
+export async function logProfileViewForProfile(userId: string) {
+  const visitorIdentifier = getVisitorIdentifier();
+
+  const { data, error } = await supabase.rpc("log_profile_view_for_profile", {
+    p_user_id: userId,
+    p_page_path: window.location.pathname + window.location.search,
+    p_visitor_identifier: visitorIdentifier,
+  });
+
+  if (error) throw error;
+  return data as AnalyticsRow;
+}
+
 export async function logQrView(cardUid: string) {
   const visitorIdentifier = getVisitorIdentifier();
 

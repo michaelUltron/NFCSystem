@@ -32,7 +32,11 @@ import {
   createLeadFromCard,
   createLeadForProfile,
 } from "../lib/lead-service";
-import { logProfileView, logQrView } from "../lib/analytics-service";
+import {
+  logProfileView,
+  logProfileViewForProfile,
+  logQrView,
+} from "../lib/analytics-service";
 import { canUseLeads } from "../lib/subscription-service";
 import { supabase } from "../lib/supabase";
 import { buildPublicCardUrl } from "../lib/app-config";
@@ -189,9 +193,19 @@ export function DigitalCardPage() {
   useEffect(() => {
     if (!profile) return;
 
-    if (cardUid) {
-      logProfileView(cardUid).catch(() => {});
-    }
+    const run = async () => {
+      try {
+        if (cardUid) {
+          await logProfileView(cardUid);
+        } else {
+          await logProfileViewForProfile(profile.id);
+        }
+      } catch {
+        // analytics failure should not break public card rendering
+      }
+    };
+
+    run();
   }, [cardUid, profile]);
 
   const themeClasses = useMemo(
