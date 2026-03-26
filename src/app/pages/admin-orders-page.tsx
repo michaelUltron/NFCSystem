@@ -13,6 +13,7 @@ import {
 } from "../lib/admin-orders-service";
 import { checkIsAdmin } from "../lib/admin-service";
 import { Save, Search, Package } from "lucide-react";
+import { markAdminOrdersSeen } from "../lib/notification-state";
 
 export function AdminOrdersPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -65,6 +66,10 @@ export function AdminOrdersPage() {
 
     run();
   }, []);
+
+  useEffect(() => {
+  markAdminOrdersSeen();
+}, []);
 
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Sidebar } from "../components/sidebar";
 import { TopNavbar } from "../components/top-navbar";
+import { markLeadsSeen } from "../lib/notification-state";
 import {
   getMyBusinessLeads,
   getMyBusinessAnalytics,
@@ -31,6 +32,10 @@ export function BusinessLeadsAnalyticsPage() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
 
+  
+  useEffect(() => {
+  markLeadsSeen();
+}, []);
   const load = async () => {
     try {
       setLoading(true);
@@ -55,6 +60,8 @@ export function BusinessLeadsAnalyticsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  
 
   const filteredLeads = useMemo(() => {
     const q = search.trim().toLowerCase();

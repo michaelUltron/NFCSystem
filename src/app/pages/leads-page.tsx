@@ -7,6 +7,7 @@ import {
   canUseLeads,
   getPlanLabel,
 } from "../lib/subscription-service";
+import { markLeadsSeen } from "../lib/notification-state";
 
 export function LeadsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -14,6 +15,9 @@ export function LeadsPage() {
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [plan, setPlan] = useState("free");
   const [allowed, setAllowed] = useState(false);
+    useEffect(() => {
+  markLeadsSeen();
+}, []);
 
   useEffect(() => {
     const load = async () => {
@@ -41,6 +45,8 @@ export function LeadsPage() {
 
     load();
   }, []);
+  
+
 
   return (
     <div className="flex min-h-screen bg-gray-50">
