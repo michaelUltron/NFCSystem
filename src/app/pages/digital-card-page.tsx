@@ -10,6 +10,7 @@ import {
   QrCode,
   X,
   Building2,
+  MapPin,
 } from "lucide-react";
 import {
   FaLinkedin,
@@ -240,6 +241,17 @@ export function DigitalCardPage() {
     return organizationBranding?.brand_tagline || "";
   }, [organizationBranding]);
 
+  const locationHref = useMemo(() => {
+    const url = profile?.location_url?.trim();
+    if (!url) return "";
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+
+    return `https://${url}`;
+  }, [profile?.location_url]);
+
   const brandHeaderStyle = useMemo(() => {
     if (
       organizationBranding?.brand_primary_color &&
@@ -270,6 +282,7 @@ TITLE:${profile.position ?? ""}
 TEL:${profile.phone ?? ""}
 EMAIL:${profile.email ?? ""}
 URL:${profile.website ?? ""}
+ADR;TYPE=WORK:;;${profile.location_label ?? ""};;;;
 NOTE:${profile.bio ?? ""}
 END:VCARD`;
 
@@ -424,6 +437,15 @@ END:VCARD`;
                   {displayTagline}
                 </p>
               ) : null}
+
+              {profile.location_label ? (
+                <p
+                  className={`mt-3 text-sm flex items-center justify-center gap-2 ${themeClasses.mutedText}`}
+                >
+                  <MapPin className="w-4 h-4" />
+                  {profile.location_label}
+                </p>
+              ) : null}
             </div>
 
             {profile.bio ? (
@@ -490,6 +512,18 @@ END:VCARD`;
                 >
                   <Globe className="w-5 h-5" />
                   Visit Website
+                </a>
+              ) : null}
+
+              {locationHref ? (
+                <a
+                  href={locationHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                >
+                  <MapPin className="w-5 h-5" />
+                  Open Location
                 </a>
               ) : null}
             </div>

@@ -9,6 +9,8 @@ export type ProfileRow = {
   phone: string | null;
   email: string | null;
   website: string | null;
+  location_label: string | null;
+  location_url: string | null;
   bio: string | null;
   avatar_url: string | null;
   theme: string | null;
@@ -42,6 +44,8 @@ const PROFILE_SELECT = `
   phone,
   email,
   website,
+  location_label,
+  location_url,
   bio,
   avatar_url,
   theme,
