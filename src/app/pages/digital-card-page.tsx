@@ -11,6 +11,9 @@ import {
   X,
   Building2,
   MapPin,
+  Share2,
+  Copy,
+  MessageCircle,
 } from "lucide-react";
 import {
   FaLinkedin,
@@ -18,6 +21,9 @@ import {
   FaFacebook,
   FaTwitter,
   FaWhatsapp,
+  FaFacebookMessenger,
+  FaTelegram,
+  FaViber,
 } from "react-icons/fa";
 import { QRCodeCanvas } from "qrcode.react";
 import sabiLogo from "../assets/sabi-logo.png";
@@ -130,6 +136,8 @@ export function DigitalCardPage() {
   const [organizationBranding, setOrganizationBranding] =
     useState<PublicOrganizationBrandingRow | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const [ownerPlan, setOwnerPlan] = useState("free");
   const [cardUid, setCardUid] = useState<string | null>(null);
 
@@ -233,6 +241,11 @@ export function DigitalCardPage() {
     return buildPublicCardUrl(username);
   }, [username, cardUid]);
 
+  const shareText = useMemo(() => {
+    const name = profile?.full_name || "this SabiCard profile";
+    return `Open ${name}'s digital business card`;
+  }, [profile?.full_name]);
+
   const displayCompany = useMemo(() => {
     return organizationBranding?.organization_name || profile?.company || "";
   }, [organizationBranding, profile?.company]);
@@ -294,6 +307,43 @@ END:VCARD`;
     link.click();
     window.URL.revokeObjectURL(url);
   };
+
+  const handleNativeShare = async () => {
+    const nextOpen = !showShareOptions;
+
+    await handleCopyProfileLink();
+    setShareMessage(
+      nextOpen
+        ? "Profile link copied. Choose an app, then paste it there."
+        : "Profile link copied."
+    );
+    setShowShareOptions(nextOpen);
+  };
+
+  const handleCopyProfileLink = async () => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(publicCardUrl);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = publicCardUrl;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+
+      setShareMessage("Profile link copied.");
+    } catch {
+      setShareMessage("Could not copy the link.");
+    }
+  };
+
+  const encodedUrl = encodeURIComponent(publicCardUrl);
+  const encodedText = encodeURIComponent(`${shareText}: ${publicCardUrl}`);
 
   const handleSubmitLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -657,17 +707,24 @@ END:VCARD`;
       {showQrModal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div
-            className={`rounded-2xl shadow-2xl max-w-sm w-full p-6 relative ${themeClasses.modalBg}`}
+            className={`relative flex max-h-[92vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl shadow-2xl ${themeClasses.modalBg}`}
           >
-            <button
-              type="button"
-              onClick={() => setShowQrModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="sticky top-0 z-20 flex justify-end bg-inherit px-4 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQrModal(false);
+                  setShowShareOptions(false);
+                  setShareMessage("");
+                }}
+                className="rounded-full bg-white/90 p-2 text-gray-500 shadow-sm hover:text-gray-700"
+                aria-label="Close QR dialog"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <div className="text-center">
+            <div className="overflow-y-auto px-6 pb-6 pt-1 text-center">
               <h2 className="text-xl font-bold mb-2">Scan QR Code</h2>
               <p className={`text-sm mb-6 ${themeClasses.mutedText}`}>
                 Scan to open this SabiCard profile
@@ -680,6 +737,126 @@ END:VCARD`;
               <p className={`text-xs mt-4 break-all ${themeClasses.mutedText}`}>
                 {publicCardUrl}
               </p>
+
+              <div className="mt-5 space-y-3">
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-medium ${themeClasses.primaryButton}`}
+                >
+                  <Share2 className="w-5 h-5" />
+                  {showShareOptions
+                    ? "Copy Link and Hide Apps"
+                    : "Copy Link and Choose App"}
+                </button>
+              </div>
+
+              {shareMessage ? (
+                <p className={`text-sm mt-3 ${themeClasses.mutedText}`}>
+                  {shareMessage}
+                </p>
+              ) : null}
+
+              {showShareOptions ? (
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <a
+                    href={`https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent(
+                      shareText
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <FaTelegram className="w-5 h-5 text-sky-500" />
+                    Telegram
+                  </a>
+
+                  <a
+                    href={`https://www.messenger.com/t/?link=${encodedUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <FaFacebookMessenger className="w-5 h-5 text-blue-600" />
+                    Messenger
+                  </a>
+
+                  <a
+                    href={`https://wa.me/?text=${encodedText}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <FaWhatsapp className="w-5 h-5 text-green-600" />
+                    WhatsApp
+                  </a>
+
+                  <a
+                    href={`viber://forward?text=${encodedText}`}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <FaViber className="w-5 h-5 text-purple-600" />
+                    Viber
+                  </a>
+
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <FaFacebook className="w-5 h-5 text-blue-700" />
+                    Facebook
+                  </a>
+
+                  <a
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <FaLinkedin className="w-5 h-5 text-blue-700" />
+                    LinkedIn
+                  </a>
+
+                  <a
+                    href={`https://twitter.com/intent/tweet?text=${encodedText}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <FaTwitter className="w-5 h-5" />
+                    X / Twitter
+                  </a>
+
+                  <a
+                    href={`sms:?&body=${encodedText}`}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    SMS
+                  </a>
+
+                  <a
+                    href={`mailto:?subject=${encodeURIComponent(
+                      "SabiCard profile"
+                    )}&body=${encodedText}`}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <Mail className="w-5 h-5" />
+                    Email
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyProfileLink}
+                    className={`flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  >
+                    <Copy className="w-5 h-5" />
+                    Copy Link
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

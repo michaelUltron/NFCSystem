@@ -19,6 +19,7 @@ import {
 import {
   Copy,
   CreditCard,
+  ChevronDown,
   Plus,
   RefreshCw,
   Download,
@@ -64,8 +65,10 @@ export function AdminPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activatedFrom, setActivatedFrom] = useState("");
   const [activatedTo, setActivatedTo] = useState("");
+  const [cardInventoryOpen, setCardInventoryOpen] = useState(true);
 
   const [userSearch, setUserSearch] = useState("");
+  const [userSubscriptionsOpen, setUserSubscriptionsOpen] = useState(true);
   const [creating, setCreating] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [encodingUid, setEncodingUid] = useState<string | null>(null);
@@ -495,9 +498,34 @@ export function AdminPage() {
 
                 <div className="bg-white rounded-xl shadow-md p-6 mb-8">
                   <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-                    <h2 className="text-xl font-semibold">Card Inventory</h2>
+                    <button
+                      type="button"
+                      onClick={() => setCardInventoryOpen((prev) => !prev)}
+                      className="inline-flex items-center gap-2 text-left"
+                      aria-expanded={cardInventoryOpen}
+                    >
+                      <ChevronDown
+                        className={`w-5 h-5 text-gray-500 transition-transform ${
+                          cardInventoryOpen ? "" : "-rotate-90"
+                        }`}
+                      />
+                      <span className="text-xl font-semibold">
+                        Card Inventory
+                      </span>
+                      <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                        {filteredCards.length} shown / {cards.length} total
+                      </span>
+                    </button>
 
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setCardInventoryOpen((prev) => !prev)}
+                        className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                      >
+                        {cardInventoryOpen ? "Hide List" : "Show List"}
+                      </button>
+
                       <button
                         type="button"
                         onClick={handleExportExcel}
@@ -521,53 +549,55 @@ export function AdminPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-2">
-                        Search
-                      </label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="Search UID, status, type, owner, reason..."
-                          className="border rounded-lg px-3 py-2 pl-10 w-full"
-                        />
+                  {cardInventoryOpen ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium mb-2">
+                            Search
+                          </label>
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="text"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              placeholder="Search UID, status, type, owner, reason..."
+                              className="border rounded-lg px-3 py-2 pl-10 w-full"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Activated From
+                          </label>
+                          <input
+                            type="date"
+                            value={activatedFrom}
+                            onChange={(e) => setActivatedFrom(e.target.value)}
+                            className="border rounded-lg px-3 py-2 w-full"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Activated To
+                          </label>
+                          <input
+                            type="date"
+                            value={activatedTo}
+                            onChange={(e) => setActivatedTo(e.target.value)}
+                            className="border rounded-lg px-3 py-2 w-full"
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Activated From
-                      </label>
-                      <input
-                        type="date"
-                        value={activatedFrom}
-                        onChange={(e) => setActivatedFrom(e.target.value)}
-                        className="border rounded-lg px-3 py-2 w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Activated To
-                      </label>
-                      <input
-                        type="date"
-                        value={activatedTo}
-                        onChange={(e) => setActivatedTo(e.target.value)}
-                        className="border rounded-lg px-3 py-2 w-full"
-                      />
-                    </div>
-                  </div>
-
-                  {filteredCards.length === 0 ? (
-                    <p className="text-gray-600">No cards found.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {filteredCards.map((card) => (
+                      {filteredCards.length === 0 ? (
+                        <p className="text-gray-600">No cards found.</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {filteredCards.map((card) => (
                         <div key={card.id} className="border rounded-xl p-4">
                           <div className="flex items-start justify-between gap-4 flex-wrap">
                             <div className="space-y-1">
@@ -650,16 +680,49 @@ export function AdminPage() {
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Inventory list is hidden. Use Show List to expand it.
+                    </p>
                   )}
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-                    <h2 className="text-xl font-semibold">User Subscriptions</h2>
+                    <button
+                      type="button"
+                      onClick={() => setUserSubscriptionsOpen((prev) => !prev)}
+                      className="inline-flex items-center gap-2 text-left"
+                      aria-expanded={userSubscriptionsOpen}
+                    >
+                      <ChevronDown
+                        className={`w-5 h-5 text-gray-500 transition-transform ${
+                          userSubscriptionsOpen ? "" : "-rotate-90"
+                        }`}
+                      />
+                      <span className="text-xl font-semibold">
+                        User Subscriptions
+                      </span>
+                      <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                        {filteredUsers.length} shown / {users.length} total
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setUserSubscriptionsOpen((prev) => !prev)}
+                      className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                    >
+                      {userSubscriptionsOpen ? "Hide List" : "Show List"}
+                    </button>
                   </div>
 
+                  {userSubscriptionsOpen ? (
+                    <>
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
                     <div className="bg-gray-50 border rounded-lg p-3">
                       <p className="text-xs text-gray-500">Total Users</p>
@@ -777,6 +840,12 @@ export function AdminPage() {
                         </div>
                       ))}
                     </div>
+                  )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Subscription list is hidden. Use Show List to expand it.
+                    </p>
                   )}
                 </div>
               </>
