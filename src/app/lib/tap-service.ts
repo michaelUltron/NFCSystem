@@ -6,19 +6,6 @@ export type CardTapDestination = {
   username: string | null;
 };
 
-export function normalizeCardStatus(status: string | null | undefined) {
-  const value = (status || "").trim().toLowerCase();
-
-  if (["active", "activated", "assigned"].includes(value)) return "active";
-  if (["inactive", "pending", "unassigned", "available"].includes(value)) {
-    return "inactive";
-  }
-  if (value === "blocked") return "blocked";
-  if (["disabled", "deactivated"].includes(value)) return "disabled";
-
-  return value || null;
-}
-
 export async function getCardTapDestination(cardUid: string) {
   const cleanedUid = cardUid.trim();
 
@@ -38,12 +25,7 @@ export async function getCardTapDestination(cardUid: string) {
     throw new Error("Card not found.");
   }
 
-  const destination = row as CardTapDestination;
-
-  return {
-    ...destination,
-    status: normalizeCardStatus(destination.status),
-  };
+  return row as CardTapDestination;
 }
 
 /**
