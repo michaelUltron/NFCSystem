@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { clearPendingCardUid } from "../lib/card-session";
 import { getMyProfile } from "../lib/profile-service";
-import { isProfileReady } from "../lib/onboarding";
 import sabiLogo from "../assets/sabi-logo.png";
 
 export function LoginPage() {
@@ -41,10 +40,11 @@ export function LoginPage() {
 
       if (next === "/dashboard") {
         const profile = await getMyProfile();
-        const needsCardSetup = !isProfileReady(profile);
+        const needsCardSetup =
+          !profile?.username || !profile?.full_name || !profile?.avatar_url;
 
         if (needsCardSetup) {
-          navigate("/onboarding", { replace: true });
+          navigate("/profile?onboarding=1", { replace: true });
           return;
         }
       }

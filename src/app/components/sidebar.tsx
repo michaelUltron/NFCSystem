@@ -9,7 +9,6 @@ import {
   CreditCard,
   Package,
   Building2,
-  Sparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import sabiLogo from "../assets/sabi-logo.png";
@@ -128,12 +127,6 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const sections = useMemo<NavSection[]>(() => {
     const generalItems: NavItem[] = [
-      {
-        label: "Onboarding",
-        href: "/onboarding",
-        icon: Sparkles,
-        visible: true,
-      },
       {
         label: "Dashboard",
         href: "/dashboard",

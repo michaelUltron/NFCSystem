@@ -19,7 +19,6 @@ import { BusinessPage } from "./pages/business-page";
 import { BusinessCardsPage } from "./pages/business-cards-page";
 import { OrganizationInvitesPage } from "./pages/organization-invites-page";
 import { BusinessLeadsAnalyticsPage } from "./pages/business-leads-analytics-page";
-import { OnboardingPage } from "./pages/onboarding-page";
 
 export const router = createBrowserRouter([
   {
@@ -33,10 +32,6 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     Component: RegisterPage,
-  },
-  {
-    path: "/onboarding",
-    Component: OnboardingPage,
   },
   {
     path: "/dashboard",

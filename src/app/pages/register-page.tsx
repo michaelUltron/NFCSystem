@@ -8,7 +8,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const next = searchParams.get("next") || "/onboarding";
+  const next = searchParams.get("next") || "/dashboard";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
