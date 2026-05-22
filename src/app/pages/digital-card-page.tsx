@@ -720,19 +720,6 @@ export function DigitalCardPage() {
                     </a>
                   ) : null}
 
-                  {profile.email ? (
-                    <a
-                      href={`mailto:${profile.email}`}
-                      className="rounded-2xl p-2 text-sm text-[#7b4c32] hover:bg-[#f7efe8]"
-                    >
-                      <Mail className="mx-auto mb-2 h-5 w-5" />
-                      <span className="block font-medium text-[#382318]">
-                        Email
-                      </span>
-                      <span className="text-xs text-[#8a6b5d]">Message me</span>
-                    </a>
-                  ) : null}
-
                   {profile.website ? (
                     <a
                       href={profile.website}
@@ -748,20 +735,7 @@ export function DigitalCardPage() {
                     </a>
                   ) : null}
 
-                  {whatsappHref ? (
-                    <a
-                      href={whatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-2xl p-2 text-sm text-[#7b4c32] hover:bg-[#f7efe8]"
-                    >
-                      <FaWhatsapp className="mx-auto mb-2 h-5 w-5" />
-                      <span className="block font-medium text-[#382318]">
-                        WhatsApp
-                      </span>
-                      <span className="text-xs text-[#8a6b5d]">Chat now</span>
-                    </a>
-                  ) : locationHref ? (
+                  {locationHref ? (
                     <a
                       href={locationHref}
                       target="_blank"
