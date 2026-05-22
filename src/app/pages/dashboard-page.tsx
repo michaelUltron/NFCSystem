@@ -36,6 +36,7 @@ import {
   getPlanLabel,
   type TrialFeatureAccess,
 } from "../lib/subscription-service";
+import { markCardsSeen } from "../lib/notification-state";
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -92,6 +93,8 @@ export function DashboardPage() {
   };
 
   useEffect(() => {
+    markCardsSeen();
+
     const run = async () => {
       try {
         await loadDashboard();

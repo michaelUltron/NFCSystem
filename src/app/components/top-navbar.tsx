@@ -1,5 +1,8 @@
 import {
   Bell,
+  BarChart3,
+  CheckCircle2,
+  CreditCard,
   Menu,
   User,
   Settings,
@@ -7,6 +10,8 @@ import {
   Mail,
   Users,
   Package,
+  Smartphone,
+  TimerReset,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
@@ -19,10 +24,21 @@ import {
   type PendingOrganizationInviteRow,
 } from "../lib/business-service";
 import { getMyLeadCount } from "../lib/lead-service";
+import { getMyCards, type CardRow } from "../lib/card-service";
+import { getMyTapHistory, type CardTapRow } from "../lib/analytics-service";
 import { checkIsAdmin } from "../lib/admin-service";
+import {
+  getMySubscription,
+  getPlanLabel,
+  getTrialFeatureAccess,
+  type SubscriptionRow,
+  type TrialFeatureAccess,
+} from "../lib/subscription-service";
 import {
   getLeadsLastSeenAt,
   getAdminOrdersLastSeenAt,
+  getCardsLastSeenAt,
+  getTapsLastSeenAt,
 } from "../lib/notification-state";
 
 interface TopNavbarProps {
@@ -58,6 +74,14 @@ type NotificationItem =
       description: string;
       href: string;
       createdAt?: string | null;
+    }
+  | {
+      id: string;
+      type: "tap" | "card" | "trial" | "plan";
+      title: string;
+      description: string;
+      href: string;
+      createdAt?: string | null;
     };
 
 export function TopNavbar({ onMenuClick }: TopNavbarProps) {
@@ -71,6 +95,10 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
   const [leadCount, setLeadCount] = useState(0);
   const [businessLeadCount, setBusinessLeadCount] = useState(0);
   const [adminOrders, setAdminOrders] = useState<AdminOrderNotification[]>([]);
+  const [cards, setCards] = useState<CardRow[]>([]);
+  const [tapHistory, setTapHistory] = useState<CardTapRow[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [trialAccess, setTrialAccess] = useState<TrialFeatureAccess | null>(null);
 
   const [loadingNotifications, setLoadingNotifications] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -98,6 +126,9 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
 
         const invitePromise = getMyPendingOrganizationInvites().catch(() => []);
         const leadPromise = getMyLeadCount().catch(() => 0);
+        const cardsPromise = getMyCards().catch(() => []);
+        const tapsPromise = getMyTapHistory().catch(() => []);
+        const subscriptionPromise = getMySubscription().catch(() => null);
         const businessLeadPromise = businessOwnerValue
           ? getMyBusinessLeadsAnalyticsSummary().catch(() => null)
           : Promise.resolve(null);
@@ -110,17 +141,32 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
               .limit(20)
           : Promise.resolve({ data: [], error: null } as any);
 
-        const [invites, personalLeadCount, businessSummary, adminOrdersResult] =
+        const [
+          invites,
+          personalLeadCount,
+          businessSummary,
+          adminOrdersResult,
+          cardRows,
+          tapRows,
+          subscriptionRow,
+        ] =
           await Promise.all([
             invitePromise,
             leadPromise,
             businessLeadPromise,
             adminOrdersPromise,
+            cardsPromise,
+            tapsPromise,
+            subscriptionPromise,
           ]);
 
         setPendingInvites(invites);
         setLeadCount(personalLeadCount);
         setBusinessLeadCount(businessSummary?.total_leads ?? 0);
+        setCards(cardRows);
+        setTapHistory(tapRows as CardTapRow[]);
+        setSubscription(subscriptionRow);
+        setTrialAccess(getTrialFeatureAccess(subscriptionRow));
 
         if (adminOrdersResult?.error) {
           setAdminOrders([]);
@@ -192,6 +238,34 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
     }).length;
   }, [adminOrders]);
 
+  const unreadTapCount = useMemo(() => {
+    const lastSeen = getTapsLastSeenAt();
+    if (!lastSeen) return tapHistory.length;
+
+    const lastSeenTime = new Date(lastSeen).getTime();
+    return tapHistory.filter((tap) => {
+      if (!tap.created_at) return false;
+      return new Date(tap.created_at).getTime() > lastSeenTime;
+    }).length;
+  }, [tapHistory]);
+
+  const newlyActivatedCards = useMemo(() => {
+    const activeCards = cards.filter((card) => card.status === "active");
+    const lastSeen = getCardsLastSeenAt();
+
+    if (!lastSeen) {
+      return activeCards.slice(0, 3);
+    }
+
+    const lastSeenTime = new Date(lastSeen).getTime();
+    return activeCards
+      .filter((card) => {
+        if (!card.activation_date) return false;
+        return new Date(card.activation_date).getTime() > lastSeenTime;
+      })
+      .slice(0, 3);
+  }, [cards]);
+
   const notifications = useMemo<NotificationItem[]>(() => {
     const items: NotificationItem[] = [];
 
@@ -241,6 +315,68 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
       });
     }
 
+    if (unreadTapCount > 0) {
+      items.push({
+        id: "card-taps",
+        type: "tap",
+        title: "Card Tapped",
+        description: `Your card was tapped ${unreadTapCount} time${
+          unreadTapCount === 1 ? "" : "s"
+        } recently.`,
+        href: "/analytics",
+        createdAt: tapHistory[0]?.created_at ?? null,
+      });
+    }
+
+    newlyActivatedCards.forEach((card) => {
+      items.push({
+        id: `card-activated-${card.id}`,
+        type: "card",
+        title: "Card Activated",
+        description: `${card.card_uid} is now active on your account.`,
+        href: "/dashboard",
+        createdAt: card.activation_date,
+      });
+    });
+
+    if (trialAccess?.trialActive && trialAccess.trialDaysRemaining <= 2) {
+      items.push({
+        id: "trial-ending",
+        type: "trial",
+        title: "Trial Ending Soon",
+        description: `Your free trial for premium features ends in ${
+          trialAccess.trialDaysRemaining
+        } ${trialAccess.trialDaysRemaining === 1 ? "day" : "days"}.`,
+        href: "/plans",
+        createdAt: trialAccess.trialEndsAt,
+      });
+    }
+
+    if (trialAccess?.trialEnded) {
+      items.push({
+        id: "trial-expired",
+        type: "trial",
+        title: "Trial Expired",
+        description:
+          "Your free trial for lead capture, themes, and branding tools has ended.",
+        href: "/plans",
+        createdAt: trialAccess.trialEndsAt,
+      });
+    }
+
+    if (subscription) {
+      items.push({
+        id: "plan-status",
+        type: "plan",
+        title: "Plan Status",
+        description: `${getPlanLabel(subscription.plan)} plan is ${
+          subscription.status || "active"
+        }.`,
+        href: "/plans",
+        createdAt: subscription.current_period_end,
+      });
+    }
+
     return items;
   }, [
     pendingInvites,
@@ -250,9 +386,15 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
     isAdmin,
     isBusinessOwner,
     adminOrders,
+    unreadTapCount,
+    tapHistory,
+    newlyActivatedCards,
+    trialAccess,
+    subscription,
   ]);
 
-  const notificationCount = notifications.length;
+  const notificationCount = notifications.filter((item) => item.type !== "plan")
+    .length;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -268,7 +410,23 @@ export function TopNavbar({ onMenuClick }: TopNavbarProps) {
       return <Users className="w-4 h-4 text-green-600" />;
     }
 
-    return <Package className="w-4 h-4 text-amber-600" />;
+    if (type === "order") {
+      return <Package className="w-4 h-4 text-amber-600" />;
+    }
+
+    if (type === "tap") {
+      return <BarChart3 className="w-4 h-4 text-sky-600" />;
+    }
+
+    if (type === "card") {
+      return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
+    }
+
+    if (type === "trial") {
+      return <TimerReset className="w-4 h-4 text-orange-600" />;
+    }
+
+    return <CreditCard className="w-4 h-4 text-indigo-600" />;
   };
 
   return (

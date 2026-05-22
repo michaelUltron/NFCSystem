@@ -7,6 +7,7 @@ import {
   canUseAnalytics,
   getPlanLabel,
 } from "../lib/subscription-service";
+import { markTapsSeen } from "../lib/notification-state";
 
 export function AnalyticsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -16,6 +17,8 @@ export function AnalyticsPage() {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
+    markTapsSeen();
+
     const load = async () => {
       try {
         const subscription = await getMySubscription();
