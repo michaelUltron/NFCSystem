@@ -170,13 +170,12 @@ export function DigitalCardPage() {
         setCardUid(resolvedUid);
 
         const [links, branding] = await Promise.all([
-          getPublicSocialLinksByUserId(publicProfile.id).catch(() => []),
-          getPublicProfileBrandingByUserId(publicProfile.id).catch(() => null),
+          getPublicSocialLinksByUserId(publicProfile.id),
+          getPublicProfileBrandingByUserId(publicProfile.id),
         ]);
 
         setSocials(links);
         setOrganizationBranding(branding);
-        setLoading(false);
 
         const { data: publicPlan, error: publicPlanError } = await supabase.rpc(
           "get_public_user_plan",
@@ -192,6 +191,7 @@ export function DigitalCardPage() {
         }
       } catch (err: any) {
         setError(err.message || "Card not found.");
+      } finally {
         setLoading(false);
       }
     };
