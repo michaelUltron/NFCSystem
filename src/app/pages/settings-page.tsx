@@ -29,6 +29,9 @@ const themeOptions = [
   { value: "modern", label: "Modern" },
   { value: "dark", label: "Dark" },
   { value: "signature", label: "Signature" },
+  { value: "executive", label: "Executive" },
+  { value: "aurora", label: "Aurora" },
+  { value: "sunrise", label: "Sunrise" },
 ];
 
 export function SettingsPage() {

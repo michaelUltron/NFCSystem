@@ -175,6 +175,54 @@ function getThemeClasses(theme?: string | null) {
         modalBg: "bg-[#101815] text-white",
       };
 
+    case "executive":
+      return {
+        pageBg: "bg-[#f3f4f1]",
+        cardBg: "bg-[#171717] text-white",
+        headerBg: "bg-[#d7c39a]",
+        avatarFallback: "bg-[#d7c39a] text-[#171717]",
+        primaryButton: "bg-[#d7c39a] text-[#171717] hover:bg-[#cbb584]",
+        secondaryButton:
+          "border border-white/15 bg-white/[0.07] text-white hover:bg-white/[0.12]",
+        socialButton: "bg-white/10 hover:bg-white/15 text-white",
+        accentText: "text-[#d7c39a]",
+        mutedText: "text-white/68",
+        footerText: "text-white/45",
+        modalBg: "bg-[#171717] text-white",
+      };
+
+    case "aurora":
+      return {
+        pageBg: "bg-gradient-to-br from-emerald-50 via-sky-50 to-fuchsia-50",
+        cardBg: "bg-white",
+        headerBg: "bg-gradient-to-r from-emerald-500 via-sky-500 to-fuchsia-500",
+        avatarFallback: "bg-emerald-100 text-emerald-700",
+        primaryButton: "bg-emerald-600 text-white hover:bg-emerald-700",
+        secondaryButton:
+          "border-2 border-sky-200 text-sky-800 hover:bg-sky-50",
+        socialButton: "bg-emerald-50 hover:bg-sky-100 text-emerald-700",
+        accentText: "text-emerald-700",
+        mutedText: "text-gray-600",
+        footerText: "text-gray-500",
+        modalBg: "bg-white",
+      };
+
+    case "sunrise":
+      return {
+        pageBg: "bg-gradient-to-br from-rose-50 via-amber-50 to-white",
+        cardBg: "bg-white",
+        headerBg: "bg-gradient-to-r from-rose-500 via-orange-400 to-amber-300",
+        avatarFallback: "bg-rose-100 text-rose-700",
+        primaryButton: "bg-rose-600 text-white hover:bg-rose-700",
+        secondaryButton:
+          "border-2 border-amber-200 text-rose-800 hover:bg-amber-50",
+        socialButton: "bg-rose-50 hover:bg-amber-100 text-rose-700",
+        accentText: "text-rose-700",
+        mutedText: "text-gray-600",
+        footerText: "text-gray-500",
+        modalBg: "bg-white",
+      };
+
     case "default":
     default:
       return {
