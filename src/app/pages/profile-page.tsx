@@ -155,6 +155,13 @@ function getPreviewThemeClasses(theme?: string | null) {
         avatar: "bg-rose-100 text-rose-700",
         muted: "text-gray-600",
       };
+    case "heritage":
+      return {
+        card: "bg-white text-[#382318]",
+        header: "bg-[#6f442c]",
+        avatar: "bg-[#f6efe8] text-[#8b5638]",
+        muted: "text-[#8a6b5d]",
+      };
     case "default":
     default:
       return {
@@ -389,6 +396,7 @@ export function ProfilePage() {
   const previewIsExecutive = previewThemeValue === "executive";
   const previewIsAurora = previewThemeValue === "aurora";
   const previewIsSunrise = previewThemeValue === "sunrise";
+  const previewIsHeritage = previewThemeValue === "heritage";
   const previewIsEditorial = previewIsSignature || previewIsExecutive;
   const previewIsPortrait = previewIsAurora || previewIsSunrise;
   const hasIdentity = !!form.full_name.trim() && !!cleanUsername;
@@ -1812,6 +1820,8 @@ export function ProfilePage() {
                     className={`overflow-hidden border shadow-sm ${
                       previewIsExecutive
                         ? `rounded-sm ${previewTheme.card}`
+                        : previewIsHeritage
+                        ? `rounded-[1.5rem] ${previewTheme.card}`
                         : previewIsEditorial || previewIsPortrait
                         ? `rounded-[1.5rem] ${previewTheme.card}`
                         : `rounded-2xl ${previewTheme.card}`
@@ -1821,6 +1831,8 @@ export function ProfilePage() {
                       className={`relative ${
                         previewIsExecutive
                           ? "h-24"
+                          : previewIsHeritage
+                          ? "h-36"
                           : previewIsAurora
                           ? "h-32"
                           : previewIsSunrise
@@ -1839,7 +1851,9 @@ export function ProfilePage() {
                           />
                           <div
                             className={`absolute inset-0 ${
-                              previewIsEditorial
+                              previewIsHeritage
+                                ? "bg-gradient-to-b from-black/20 via-[#4b2d1e]/45 to-[#4b2d1e]/75"
+                                : previewIsEditorial
                                 ? "bg-black/45"
                                 : "bg-gradient-to-b from-black/10 to-black/30"
                             }`}
@@ -1851,6 +1865,8 @@ export function ProfilePage() {
                       className={
                         previewIsExecutive
                           ? "px-4 pb-5 -mt-10"
+                          : previewIsHeritage
+                          ? "px-4 pb-4 -mt-9 bg-white"
                           : previewIsAurora
                           ? "px-4 pb-5 -mt-14"
                           : previewIsSunrise
@@ -1864,6 +1880,8 @@ export function ProfilePage() {
                         className={`relative z-10 h-20 w-20 overflow-hidden border-4 flex items-center justify-center font-semibold text-xl ${
                           previewIsExecutive
                             ? `rounded-sm border-[#171717] ${previewTheme.avatar}`
+                            : previewIsHeritage
+                            ? `mx-auto rounded-full border-white ${previewTheme.avatar}`
                             : previewIsAurora
                             ? `h-24 w-24 rounded-2xl border-white ${previewTheme.avatar}`
                             : previewIsEditorial
@@ -1883,7 +1901,9 @@ export function ProfilePage() {
                       </div>
                       <div
                         className={
-                          previewIsEditorial || previewIsAurora
+                          previewIsHeritage
+                            ? "mt-3 text-center"
+                            : previewIsEditorial || previewIsAurora
                             ? "mt-3 text-left"
                             : "text-center mt-3"
                         }
@@ -1891,6 +1911,8 @@ export function ProfilePage() {
                         <h3
                           className={`font-semibold ${
                             previewIsExecutive ? "font-serif text-[#d7c39a]" : ""
+                          } ${
+                            previewIsHeritage ? "font-serif text-[#382318]" : ""
                           } text-lg`}
                         >
                           {form.full_name || "Your Name"}
@@ -1906,12 +1928,23 @@ export function ProfilePage() {
                             className={`text-sm mt-2 flex items-center gap-1 ${
                               previewIsEditorial || previewIsAurora
                                 ? "justify-start"
+                                : previewIsHeritage
+                                ? "justify-center"
                                 : "justify-center"
                             } ${previewTheme.muted}`}
                           >
                             <MapPin className="w-4 h-4" />
                             {form.location_label}
                           </p>
+                        ) : null}
+                        {previewIsHeritage ? (
+                          <div className="mt-4 grid grid-cols-3 overflow-hidden rounded-lg bg-[#8b5638] text-[0.65rem] font-medium text-white">
+                            <span className="py-2">LinkedIn</span>
+                            <span className="border-x border-white/20 py-2">
+                              Web
+                            </span>
+                            <span className="py-2">Mail</span>
+                          </div>
                         ) : null}
                       </div>
                     </div>

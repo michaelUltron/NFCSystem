@@ -33,6 +33,7 @@ const themeOptions = [
   { value: "executive", label: "Executive" },
   { value: "aurora", label: "Aurora" },
   { value: "sunrise", label: "Sunrise" },
+  { value: "heritage", label: "Heritage" },
 ];
 
 export function SettingsPage() {

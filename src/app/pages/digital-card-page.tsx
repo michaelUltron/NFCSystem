@@ -227,6 +227,22 @@ function getThemeClasses(theme?: string | null) {
         modalBg: "bg-white",
       };
 
+    case "heritage":
+      return {
+        pageBg: "bg-[#f0e7df]",
+        cardBg: "bg-[#8b5638] text-white",
+        headerBg: "bg-[#6f442c]",
+        avatarFallback: "bg-[#f6efe8] text-[#8b5638]",
+        primaryButton: "bg-[#8b5638] text-white hover:bg-[#75462d]",
+        secondaryButton:
+          "border border-[#8b5638]/20 bg-white text-[#8b5638] hover:bg-[#f8f1ec]",
+        socialButton: "bg-[#f8f1ec] hover:bg-[#eadbcc] text-[#8b5638]",
+        accentText: "text-[#8b5638]",
+        mutedText: "text-[#8a6b5d]",
+        footerText: "text-[#9b7c6d]",
+        modalBg: "bg-white",
+      };
+
     case "default":
     default:
       return {
@@ -404,6 +420,23 @@ export function DigitalCardPage() {
     return `Open ${name}'s digital business card`;
   }, [profile?.full_name]);
 
+  const whatsappSocial = useMemo(
+    () => socials.find((social) => social.platform === "whatsapp"),
+    [socials]
+  );
+
+  const whatsappHref = useMemo(() => {
+    if (!whatsappSocial?.url) return "";
+    return whatsappSocial.url.startsWith("http")
+      ? whatsappSocial.url
+      : `https://wa.me/${whatsappSocial.url.replace(/\D/g, "")}`;
+  }, [whatsappSocial]);
+
+  const linkedinSocial = useMemo(
+    () => socials.find((social) => social.platform === "linkedin"),
+    [socials]
+  );
+
   const displayCompany = useMemo(() => {
     return organizationBranding?.organization_name || profile?.company || "";
   }, [organizationBranding, profile?.company]);
@@ -450,6 +483,7 @@ export function DigitalCardPage() {
   const isExecutiveDesign = effectiveTheme === "executive";
   const isAuroraDesign = effectiveTheme === "aurora";
   const isSunriseDesign = effectiveTheme === "sunrise";
+  const isHeritageDesign = effectiveTheme === "heritage";
   const isEditorialDesign = isSignatureDesign || isExecutiveDesign;
   const isPortraitDesign = isAuroraDesign || isSunriseDesign;
 
@@ -614,6 +648,8 @@ export function DigitalCardPage() {
           className={`w-full overflow-hidden shadow-2xl ${
             isSignatureDesign
               ? "max-w-md rounded-[2rem] bg-[#101815] text-white"
+              : isHeritageDesign
+              ? "max-w-sm rounded-[1.6rem] bg-white text-[#382318]"
               : isExecutiveDesign
               ? "max-w-2xl rounded-sm border border-[#d7c39a]/30 bg-[#171717] text-white"
               : isAuroraDesign
@@ -623,6 +659,272 @@ export function DigitalCardPage() {
               : `max-w-lg rounded-2xl ${themeClasses.cardBg}`
           }`}
         >
+          {isHeritageDesign ? (
+            <>
+              <div
+                className="relative h-64 overflow-hidden bg-[#6f442c]"
+                style={brandHeaderStyle}
+              >
+                {effectiveCoverUrl ? (
+                  <>
+                    <ImageWithFallback
+                      src={effectiveCoverUrl}
+                      alt={`${profile.full_name || "Profile"} cover photo`}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-[#4b2d1e]/55 to-[#4b2d1e]/80" />
+                  </>
+                ) : null}
+
+                <div className="absolute inset-x-0 top-10 flex justify-center">
+                  {profile.avatar_url ? (
+                    <ImageWithFallback
+                      src={profile.avatar_url}
+                      alt={profile.full_name || "Profile photo"}
+                      className="h-20 w-20 rounded-full border-4 border-white object-cover shadow-xl"
+                    />
+                  ) : (
+                    <div
+                      className={`flex h-20 w-20 items-center justify-center rounded-full border-4 border-white text-2xl font-bold shadow-xl ${themeClasses.avatarFallback}`}
+                    >
+                      {initials}
+                    </div>
+                  )}
+                </div>
+
+                <div className="absolute inset-x-6 bottom-16 text-center text-white">
+                  <h1 className="text-2xl font-serif font-semibold leading-tight tracking-normal">
+                    {profile.full_name || "Unnamed User"}
+                  </h1>
+                  <p className="mt-1 text-sm text-white/80">
+                    {profile.position || displayCompany || "Digital Card"}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className="relative -mt-10 bg-white px-6 pb-6 pt-12 text-[#382318]"
+                style={{ clipPath: "polygon(0 9%, 100% 0, 100% 100%, 0 100%)" }}
+              >
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  {profile.phone ? (
+                    <a
+                      href={`tel:${profile.phone}`}
+                      className="rounded-2xl p-2 text-sm text-[#7b4c32] hover:bg-[#f7efe8]"
+                    >
+                      <Phone className="mx-auto mb-2 h-5 w-5" />
+                      <span className="block font-medium text-[#382318]">
+                        Phone
+                      </span>
+                      <span className="text-xs text-[#8a6b5d]">Call me</span>
+                    </a>
+                  ) : null}
+
+                  {profile.email ? (
+                    <a
+                      href={`mailto:${profile.email}`}
+                      className="rounded-2xl p-2 text-sm text-[#7b4c32] hover:bg-[#f7efe8]"
+                    >
+                      <Mail className="mx-auto mb-2 h-5 w-5" />
+                      <span className="block font-medium text-[#382318]">
+                        Email
+                      </span>
+                      <span className="text-xs text-[#8a6b5d]">Message me</span>
+                    </a>
+                  ) : null}
+
+                  {profile.website ? (
+                    <a
+                      href={profile.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-2xl p-2 text-sm text-[#7b4c32] hover:bg-[#f7efe8]"
+                    >
+                      <Globe className="mx-auto mb-2 h-5 w-5" />
+                      <span className="block font-medium text-[#382318]">
+                        Website
+                      </span>
+                      <span className="text-xs text-[#8a6b5d]">Visit</span>
+                    </a>
+                  ) : null}
+
+                  {whatsappHref ? (
+                    <a
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-2xl p-2 text-sm text-[#7b4c32] hover:bg-[#f7efe8]"
+                    >
+                      <FaWhatsapp className="mx-auto mb-2 h-5 w-5" />
+                      <span className="block font-medium text-[#382318]">
+                        WhatsApp
+                      </span>
+                      <span className="text-xs text-[#8a6b5d]">Chat now</span>
+                    </a>
+                  ) : locationHref ? (
+                    <a
+                      href={locationHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-2xl p-2 text-sm text-[#7b4c32] hover:bg-[#f7efe8]"
+                    >
+                      <MapPin className="mx-auto mb-2 h-5 w-5" />
+                      <span className="block font-medium text-[#382318]">
+                        Location
+                      </span>
+                      <span className="text-xs text-[#8a6b5d]">Open map</span>
+                    </a>
+                  ) : null}
+                </div>
+
+                {profile.bio ? (
+                  <p className="mt-5 text-center text-sm leading-6 text-[#8a6b5d]">
+                    {profile.bio}
+                  </p>
+                ) : null}
+
+                <button
+                  onClick={handleSaveContact}
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#8b5638] py-3 text-sm font-semibold text-white hover:bg-[#75462d]"
+                >
+                  <Download className="h-4 w-4" />
+                  Get My vCard
+                </button>
+
+                <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-b-[1.25rem] bg-[#8b5638] text-xs font-medium text-white">
+                  {linkedinSocial?.url ? (
+                    <a
+                      href={linkedinSocial.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1 py-3 hover:bg-white/10"
+                    >
+                      <FaLinkedin className="h-4 w-4" />
+                      LinkedIn
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowQrModal(true)}
+                      className="flex items-center justify-center gap-1 py-3 hover:bg-white/10"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      QR
+                    </button>
+                  )}
+
+                  {profile.website ? (
+                    <a
+                      href={profile.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1 border-x border-white/20 py-3 hover:bg-white/10"
+                    >
+                      <Globe className="h-4 w-4" />
+                      Web
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowQrModal(true)}
+                      className="flex items-center justify-center gap-1 border-x border-white/20 py-3 hover:bg-white/10"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      QR
+                    </button>
+                  )}
+
+                  {profile.email ? (
+                    <a
+                      href={`mailto:${profile.email}`}
+                      className="flex items-center justify-center gap-1 py-3 hover:bg-white/10"
+                    >
+                      <Mail className="h-4 w-4" />
+                      Mail
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowQrModal(true)}
+                      className="flex items-center justify-center gap-1 py-3 hover:bg-white/10"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      QR
+                    </button>
+                  )}
+                </div>
+
+                {leadCaptureAllowed ? (
+                  <div className="mt-5 rounded-2xl bg-[#f8f1ec] p-4">
+                    <h3 className="mb-3 text-center text-sm font-semibold text-[#382318]">
+                      Leave Your Details
+                    </h3>
+                    <form onSubmit={handleSubmitLead} className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Your name"
+                        className="w-full rounded-lg border border-[#eadbcc] px-3 py-2 text-sm"
+                        value={leadName}
+                        onChange={(e) => setLeadName(e.target.value)}
+                      />
+                      <input
+                        type="email"
+                        placeholder="Your email"
+                        className="w-full rounded-lg border border-[#eadbcc] px-3 py-2 text-sm"
+                        value={leadEmail}
+                        onChange={(e) => setLeadEmail(e.target.value)}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Phone number"
+                        className="w-full rounded-lg border border-[#eadbcc] px-3 py-2 text-sm"
+                        value={leadPhone}
+                        onChange={(e) => setLeadPhone(e.target.value)}
+                      />
+                      <textarea
+                        placeholder="Message"
+                        rows={3}
+                        className="w-full rounded-lg border border-[#eadbcc] px-3 py-2 text-sm"
+                        value={leadMessage}
+                        onChange={(e) => setLeadMessage(e.target.value)}
+                      />
+
+                      {leadError ? (
+                        <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                          {leadError}
+                        </div>
+                      ) : null}
+
+                      {leadSuccess ? (
+                        <div className="rounded-lg border border-green-200 bg-green-50 p-2 text-xs text-green-700">
+                          {leadSuccess}
+                        </div>
+                      ) : null}
+
+                      <button
+                        type="submit"
+                        disabled={submittingLead}
+                        className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#8b5638] py-2.5 text-sm font-semibold text-white hover:bg-[#75462d] disabled:opacity-60"
+                      >
+                        <Send className="h-4 w-4" />
+                        {submittingLead ? "Sending..." : "Send Details"}
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
+
+                <div className="mt-5 flex items-center justify-center gap-2 text-xs text-[#9b7c6d]">
+                  <img
+                    src={sabiLogo}
+                    alt="SabiCard"
+                    className="h-4 w-4 object-contain"
+                  />
+                  Powered by SabiCard
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
           <div
             className={
               isSignatureDesign
@@ -1111,6 +1413,8 @@ export function DigitalCardPage() {
               Powered by SabiCard
             </div>
           </div>
+            </>
+          )}
         </div>
       </div>
 
