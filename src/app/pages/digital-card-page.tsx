@@ -151,6 +151,8 @@ export function DigitalCardPage() {
   const [leadError, setLeadError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
       if (!username) {
         setError("Missing username.");
@@ -160,6 +162,8 @@ export function DigitalCardPage() {
 
       try {
         const publicProfile = await getPublicProfileByUsername(username);
+        if (cancelled) return;
+
         setProfile(publicProfile);
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -168,35 +172,45 @@ export function DigitalCardPage() {
         const resolvedUid = uidFromUrl || uidFromSession || null;
 
         setCardUid(resolvedUid);
+        setLoading(false);
 
-        const [links, branding] = await Promise.all([
+        const [linksResult, brandingResult, planResult] = await Promise.allSettled([
           getPublicSocialLinksByUserId(publicProfile.id),
           getPublicProfileBrandingByUserId(publicProfile.id),
+          supabase.rpc("get_public_user_plan", {
+            p_user_id: publicProfile.id,
+          }),
         ]);
 
-        setSocials(links);
-        setOrganizationBranding(branding);
+        if (cancelled) return;
 
-        const { data: publicPlan, error: publicPlanError } = await supabase.rpc(
-          "get_public_user_plan",
-          {
-            p_user_id: publicProfile.id,
-          }
-        );
+        if (linksResult.status === "fulfilled") {
+          setSocials(linksResult.value);
+        }
 
-        if (!publicPlanError && publicPlan) {
-          setOwnerPlan(publicPlan);
-        } else {
-          setOwnerPlan("free");
+        if (brandingResult.status === "fulfilled") {
+          setOrganizationBranding(brandingResult.value);
+        }
+
+        if (
+          planResult.status === "fulfilled" &&
+          !planResult.value.error &&
+          planResult.value.data
+        ) {
+          setOwnerPlan(planResult.value.data);
         }
       } catch (err: any) {
+        if (cancelled) return;
         setError(err.message || "Card not found.");
-      } finally {
         setLoading(false);
       }
     };
 
     load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [username]);
 
   useEffect(() => {
