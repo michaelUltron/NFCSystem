@@ -112,6 +112,8 @@ type ImageEditorState = {
 const AVATAR_CROP_SIZE = 720;
 const COVER_CROP_WIDTH = 1600;
 const COVER_CROP_HEIGHT = 640;
+const MIN_IMAGE_ZOOM = 1;
+const MAX_IMAGE_ZOOM = 2.5;
 
 const DEFAULT_MAP_CENTER = {
   lat: 14.5995,
@@ -230,6 +232,10 @@ function parseGoogleMapsCoordinates(url: string) {
   };
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
@@ -302,6 +308,12 @@ export function ProfilePage() {
     clientY: number;
     center: typeof DEFAULT_MAP_CENTER;
     moved: boolean;
+  } | null>(null);
+  const imagePointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const imageGestureRef = useRef<{
+    lastX: number;
+    lastY: number;
+    lastDistance: number | null;
   } | null>(null);
   const onboardingMode = searchParams.get("onboarding") === "1";
 
@@ -583,12 +595,151 @@ export function ProfilePage() {
   };
 
   const closeImageEditor = () => {
+    imagePointersRef.current.clear();
+    imageGestureRef.current = null;
     setImageEditor((prev) => {
       if (prev?.previewUrl) {
         URL.revokeObjectURL(prev.previewUrl);
       }
       return null;
     });
+  };
+
+  const getImagePointerList = () => Array.from(imagePointersRef.current.values());
+
+  const getPointerDistance = (
+    first: { x: number; y: number },
+    second: { x: number; y: number }
+  ) => Math.hypot(first.x - second.x, first.y - second.y);
+
+  const handleImageEditorWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const nextZoomStep = e.deltaY < 0 ? 0.08 : -0.08;
+
+    setImageEditor((prev) =>
+      prev
+        ? {
+            ...prev,
+            zoom: clamp(
+              Number((prev.zoom + nextZoomStep).toFixed(2)),
+              MIN_IMAGE_ZOOM,
+              MAX_IMAGE_ZOOM
+            ),
+          }
+        : prev
+    );
+  };
+
+  const handleImageEditorPointerDown = (
+    e: React.PointerEvent<HTMLDivElement>
+  ) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    imagePointersRef.current.set(e.pointerId, {
+      x: e.clientX,
+      y: e.clientY,
+    });
+
+    const pointers = getImagePointerList();
+    if (pointers.length === 1) {
+      imageGestureRef.current = {
+        lastX: e.clientX,
+        lastY: e.clientY,
+        lastDistance: null,
+      };
+    } else if (pointers.length >= 2) {
+      imageGestureRef.current = {
+        lastX: 0,
+        lastY: 0,
+        lastDistance: getPointerDistance(pointers[0], pointers[1]),
+      };
+    }
+  };
+
+  const handleImageEditorPointerMove = (
+    e: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (!imagePointersRef.current.has(e.pointerId)) return;
+
+    imagePointersRef.current.set(e.pointerId, {
+      x: e.clientX,
+      y: e.clientY,
+    });
+
+    const pointers = getImagePointerList();
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    if (pointers.length >= 2) {
+      const distance = getPointerDistance(pointers[0], pointers[1]);
+      const lastDistance = imageGestureRef.current?.lastDistance;
+
+      if (lastDistance && lastDistance > 0) {
+        const scale = distance / lastDistance;
+        setImageEditor((prev) =>
+          prev
+            ? {
+                ...prev,
+                zoom: clamp(
+                  Number((prev.zoom * scale).toFixed(2)),
+                  MIN_IMAGE_ZOOM,
+                  MAX_IMAGE_ZOOM
+                ),
+              }
+            : prev
+        );
+      }
+
+      imageGestureRef.current = {
+        lastX: 0,
+        lastY: 0,
+        lastDistance: distance,
+      };
+      return;
+    }
+
+    const lastGesture = imageGestureRef.current;
+    if (!lastGesture) return;
+
+    const deltaX = e.clientX - lastGesture.lastX;
+    const deltaY = e.clientY - lastGesture.lastY;
+    const xMove = rect.width ? (deltaX / rect.width) * 100 : 0;
+    const yMove = rect.height ? (deltaY / rect.height) * 100 : 0;
+
+    setImageEditor((prev) =>
+      prev
+        ? {
+            ...prev,
+            x: clamp(Number((prev.x - xMove).toFixed(1)), -50, 50),
+            y: clamp(Number((prev.y - yMove).toFixed(1)), -50, 50),
+          }
+        : prev
+    );
+
+    imageGestureRef.current = {
+      lastX: e.clientX,
+      lastY: e.clientY,
+      lastDistance: null,
+    };
+  };
+
+  const handleImageEditorPointerEnd = (
+    e: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+
+    imagePointersRef.current.delete(e.pointerId);
+    const pointers = getImagePointerList();
+
+    if (pointers.length === 1) {
+      imageGestureRef.current = {
+        lastX: pointers[0].x,
+        lastY: pointers[0].y,
+        lastDistance: null,
+      };
+    } else {
+      imageGestureRef.current = null;
+    }
   };
 
   const handleImageFileChange = async (
@@ -2097,8 +2248,8 @@ export function ProfilePage() {
               </h2>
               <p className="text-sm text-gray-500">
                 {imageEditor.kind === "avatar"
-                  ? "Zoom and move the image until your face is centered."
-                  : "Set the focal point so the cover looks good across card themes."}
+                  ? "Drag to move. Scroll or pinch with two fingers to zoom."
+                  : "Drag to set the focal point. Scroll or pinch with two fingers to zoom."}
               </p>
             </div>
 
@@ -2115,18 +2266,24 @@ export function ProfilePage() {
           <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-[1fr_280px]">
             <div>
               <div
+                onWheel={handleImageEditorWheel}
+                onPointerDown={handleImageEditorPointerDown}
+                onPointerMove={handleImageEditorPointerMove}
+                onPointerUp={handleImageEditorPointerEnd}
+                onPointerCancel={handleImageEditorPointerEnd}
                 className={`mx-auto overflow-hidden border bg-gray-100 shadow-inner ${
                   imageEditor.kind === "avatar"
                     ? imageEditor.avatarShape === "circle"
-                      ? "aspect-square max-w-sm rounded-full"
-                      : "aspect-square max-w-sm rounded-2xl"
-                    : "aspect-[5/2] w-full rounded-xl"
+                      ? "aspect-square max-w-sm cursor-grab touch-none select-none rounded-full active:cursor-grabbing"
+                      : "aspect-square max-w-sm cursor-grab touch-none select-none rounded-2xl active:cursor-grabbing"
+                    : "aspect-[5/2] w-full cursor-grab touch-none select-none rounded-xl active:cursor-grabbing"
                 }`}
               >
                 <img
                   src={imageEditor.previewUrl}
                   alt="Crop preview"
-                  className="h-full w-full object-cover"
+                  draggable={false}
+                  className="h-full w-full object-cover pointer-events-none"
                   style={{
                     objectPosition: `${50 + imageEditor.x}% ${
                       50 + imageEditor.y
@@ -2137,7 +2294,8 @@ export function ProfilePage() {
               </div>
 
               <p className="mt-3 text-center text-xs text-gray-500">
-                Previewing {imageEditor.file.name}
+                Drag the image to move it. Use your mouse wheel or pinch with
+                two fingers to zoom.
               </p>
             </div>
 
@@ -2179,8 +2337,8 @@ export function ProfilePage() {
                 </label>
                 <input
                   type="range"
-                  min="1"
-                  max="2.5"
+                  min={MIN_IMAGE_ZOOM}
+                  max={MAX_IMAGE_ZOOM}
                   step="0.05"
                   value={imageEditor.zoom}
                   onChange={(e) =>
