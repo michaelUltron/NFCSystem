@@ -38,6 +38,14 @@ export async function activateCard(cardUid: string) {
 }
 
 export async function getMyCards() {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from("cards")
     .select(`
@@ -55,6 +63,9 @@ export async function getMyCards() {
       blocked_at,
       blocked_reason
     `)
+    .or(
+      `user_id.eq.${user.id},assigned_user_id.eq.${user.id},owned_by_user_id.eq.${user.id}`
+    )
     .order("created_at", { ascending: false });
 
   if (error) throw error;

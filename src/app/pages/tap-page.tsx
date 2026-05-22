@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { CreditCard } from "lucide-react";
 import { getCardTapDestination } from "../lib/tap-service";
 import { logCardTap } from "../lib/analytics-service";
+import { supabase } from "../lib/supabase";
 
 export function TapPage() {
   const [searchParams] = useSearchParams();
@@ -32,6 +33,20 @@ export function TapPage() {
 
           setMessage("Opening digital card...");
           navigate(`/card/${result.username}`, { replace: true });
+          return;
+        }
+
+        if (result.status === "active" && !result.username) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          setMessage("This card is active, but the public profile is not ready yet.");
+
+          if (user) {
+            navigate("/profile?onboarding=1", { replace: true });
+          }
+
           return;
         }
 

@@ -7,6 +7,7 @@ import { activateCard, getMySubscriptionPlan } from "../lib/card-service";
 import {
   getCardTapDestination,
   buildCardPublicPath,
+  normalizeCardStatus,
 } from "../lib/tap-service";
 import sabiLogo from "../assets/sabi-logo.png";
 
@@ -55,7 +56,9 @@ export function ActivationPage() {
       try {
         const cardInfo = await getCardTapDestination(cardUid);
 
-        if (cardInfo.status === "active") {
+        const cardStatus = normalizeCardStatus(cardInfo.status);
+
+        if (cardStatus === "active") {
           setCardAlreadyOwned(true);
 
           if (cardInfo.username) {
@@ -76,14 +79,14 @@ export function ActivationPage() {
           return;
         }
 
-        if (cardInfo.status === "disabled") {
+        if (cardStatus === "disabled") {
           clearPendingCardUid();
           setError("This card is disabled.");
           setLoading(false);
           return;
         }
 
-        if (cardInfo.status === "blocked") {
+        if (cardStatus === "blocked") {
           clearPendingCardUid();
           setError("This card is blocked.");
           setLoading(false);
@@ -155,10 +158,20 @@ export function ActivationPage() {
 
       const updatedInfo = await getCardTapDestination(cardUid);
 
-      if (updatedInfo.username) {
+      const updatedStatus = normalizeCardStatus(updatedInfo.status);
+
+      if (updatedStatus === "active" && updatedInfo.username) {
         setMessage("Card activated successfully. Opening your digital card...");
         setTimeout(() => {
           navigate(buildCardPublicPath(updatedInfo.username!, cardUid));
+        }, 800);
+        return;
+      }
+
+      if (updatedStatus === "active" && !updatedInfo.username) {
+        setMessage("Card activated successfully. Finish your public profile next.");
+        setTimeout(() => {
+          navigate("/profile?onboarding=1");
         }, 800);
         return;
       }
