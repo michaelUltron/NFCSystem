@@ -377,8 +377,12 @@ export function ProfilePage() {
   const previewThemeValue = access?.canUseThemes ? form.theme : "default";
   const previewCoverUrl = access?.canUseBranding ? form.cover_photo_url : "";
   const previewTheme = getPreviewThemeClasses(previewThemeValue);
-  const previewIsEditorial =
-    previewThemeValue === "signature" || previewThemeValue === "executive";
+  const previewIsSignature = previewThemeValue === "signature";
+  const previewIsExecutive = previewThemeValue === "executive";
+  const previewIsAurora = previewThemeValue === "aurora";
+  const previewIsSunrise = previewThemeValue === "sunrise";
+  const previewIsEditorial = previewIsSignature || previewIsExecutive;
+  const previewIsPortrait = previewIsAurora || previewIsSunrise;
   const onboardingItems = [
     {
       label: "Upload a clear profile photo",
@@ -1623,14 +1627,24 @@ export function ProfilePage() {
                   <h2 className="text-xl font-semibold mb-4">Public Preview</h2>
                   <div
                     className={`overflow-hidden border shadow-sm ${
-                      previewIsEditorial
+                      previewIsExecutive
+                        ? `rounded-sm ${previewTheme.card}`
+                        : previewIsEditorial || previewIsPortrait
                         ? `rounded-[1.5rem] ${previewTheme.card}`
                         : `rounded-2xl ${previewTheme.card}`
                     }`}
                   >
                     <div
                       className={`relative ${
-                        previewIsEditorial ? "h-28" : "h-20"
+                        previewIsExecutive
+                          ? "h-24"
+                          : previewIsAurora
+                          ? "h-32"
+                          : previewIsSunrise
+                          ? "h-36"
+                          : previewIsEditorial
+                          ? "h-28"
+                          : "h-20"
                       } ${previewTheme.header}`}
                     >
                       {previewCoverUrl ? (
@@ -1652,14 +1666,24 @@ export function ProfilePage() {
                     </div>
                     <div
                       className={
-                        previewIsEditorial
+                        previewIsExecutive
+                          ? "px-4 pb-5 -mt-10"
+                          : previewIsAurora
+                          ? "px-4 pb-5 -mt-14"
+                          : previewIsSunrise
+                          ? "px-4 pb-5 -mt-12"
+                          : previewIsEditorial
                           ? "px-4 pb-5 -mt-12"
                           : "px-4 pb-4 -mt-10"
                       }
                     >
                       <div
                         className={`relative z-10 h-20 w-20 overflow-hidden border-4 flex items-center justify-center font-semibold text-xl ${
-                          previewIsEditorial
+                          previewIsExecutive
+                            ? `rounded-sm border-[#171717] ${previewTheme.avatar}`
+                            : previewIsAurora
+                            ? `h-24 w-24 rounded-2xl border-white ${previewTheme.avatar}`
+                            : previewIsEditorial
                             ? `rounded-2xl border-[#101815] ${previewTheme.avatar}`
                             : `mx-auto rounded-full border-white ${previewTheme.avatar}`
                         }`}
@@ -1675,9 +1699,17 @@ export function ProfilePage() {
                         )}
                       </div>
                       <div
-                        className={previewIsEditorial ? "mt-3 text-left" : "text-center mt-3"}
+                        className={
+                          previewIsEditorial || previewIsAurora
+                            ? "mt-3 text-left"
+                            : "text-center mt-3"
+                        }
                       >
-                        <h3 className="font-semibold text-lg">
+                        <h3
+                          className={`font-semibold ${
+                            previewIsExecutive ? "font-serif text-[#d7c39a]" : ""
+                          } text-lg`}
+                        >
                           {form.full_name || "Your Name"}
                         </h3>
                         <p className={`text-sm ${previewTheme.muted}`}>
@@ -1689,7 +1721,9 @@ export function ProfilePage() {
                         {form.location_label ? (
                           <p
                             className={`text-sm mt-2 flex items-center gap-1 ${
-                              previewIsEditorial ? "justify-start" : "justify-center"
+                              previewIsEditorial || previewIsAurora
+                                ? "justify-start"
+                                : "justify-center"
                             } ${previewTheme.muted}`}
                           >
                             <MapPin className="w-4 h-4" />

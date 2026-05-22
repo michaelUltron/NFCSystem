@@ -443,6 +443,11 @@ export function DigitalCardPage() {
   }, [organizationBranding, effectiveCoverUrl]);
 
   const isSignatureDesign = effectiveTheme === "signature";
+  const isExecutiveDesign = effectiveTheme === "executive";
+  const isAuroraDesign = effectiveTheme === "aurora";
+  const isSunriseDesign = effectiveTheme === "sunrise";
+  const isEditorialDesign = isSignatureDesign || isExecutiveDesign;
+  const isPortraitDesign = isAuroraDesign || isSunriseDesign;
 
   const handleSaveContact = async () => {
     if (!profile) return;
@@ -605,6 +610,12 @@ export function DigitalCardPage() {
           className={`w-full overflow-hidden shadow-2xl ${
             isSignatureDesign
               ? "max-w-md rounded-[2rem] bg-[#101815] text-white"
+              : isExecutiveDesign
+              ? "max-w-2xl rounded-sm border border-[#d7c39a]/30 bg-[#171717] text-white"
+              : isAuroraDesign
+              ? "max-w-md rounded-[2.25rem] border border-white/70 bg-white"
+              : isSunriseDesign
+              ? "max-w-md rounded-[2rem] bg-white"
               : `max-w-lg rounded-2xl ${themeClasses.cardBg}`
           }`}
         >
@@ -612,6 +623,22 @@ export function DigitalCardPage() {
             className={
               isSignatureDesign
                 ? "relative h-44 overflow-hidden bg-[#17231f] p-5"
+                : isExecutiveDesign
+                ? `relative h-28 overflow-hidden ${
+                    !brandHeaderStyle ? "bg-[#d7c39a]" : ""
+                  }`
+                : isAuroraDesign
+                ? `relative h-52 overflow-hidden ${
+                    !brandHeaderStyle
+                      ? "bg-gradient-to-br from-emerald-400 via-sky-400 to-fuchsia-400"
+                      : ""
+                  }`
+                : isSunriseDesign
+                ? `relative h-60 overflow-hidden ${
+                    !brandHeaderStyle
+                      ? "bg-gradient-to-br from-rose-500 via-orange-400 to-amber-300"
+                      : ""
+                  }`
                 : `relative h-32 overflow-hidden ${
                     !brandHeaderStyle ? themeClasses.headerBg : ""
                   }`
@@ -675,11 +702,27 @@ export function DigitalCardPage() {
             ) : null}
           </div>
 
-          <div className={isSignatureDesign ? "px-5 pb-6" : "px-6 pb-8"}>
+          <div
+            className={
+              isSignatureDesign
+                ? "px-5 pb-6"
+                : isExecutiveDesign
+                ? "px-8 pb-8"
+                : isPortraitDesign
+                ? "px-5 pb-7"
+                : "px-6 pb-8"
+            }
+          >
             <div
               className={
                 isSignatureDesign
                   ? "mb-5 flex justify-start -mt-16"
+                  : isExecutiveDesign
+                  ? "mb-5 flex justify-start -mt-12"
+                  : isAuroraDesign
+                  ? "mb-5 flex justify-center -mt-20"
+                  : isSunriseDesign
+                  ? "mb-5 flex justify-center -mt-16"
                   : "flex justify-center -mt-16 mb-4"
               }
             >
@@ -691,6 +734,12 @@ export function DigitalCardPage() {
                     className={
                       isSignatureDesign
                         ? "h-32 w-32 rounded-[1.65rem] border-4 border-[#101815] object-cover shadow-2xl"
+                        : isExecutiveDesign
+                        ? "h-28 w-28 rounded-sm border-4 border-[#171717] object-cover shadow-2xl"
+                        : isAuroraDesign
+                        ? "h-36 w-36 rounded-[2rem] border-4 border-white object-cover shadow-2xl"
+                        : isSunriseDesign
+                        ? "h-32 w-32 rounded-full border-4 border-white object-cover shadow-xl"
                         : "w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
                     }
                   />
@@ -699,6 +748,12 @@ export function DigitalCardPage() {
                     className={`flex h-32 w-32 items-center justify-center text-3xl font-bold shadow-lg ${
                       isSignatureDesign
                         ? "rounded-[1.65rem] border-4 border-[#101815]"
+                        : isExecutiveDesign
+                        ? "h-28 w-28 rounded-sm border-4 border-[#171717]"
+                        : isAuroraDesign
+                        ? "h-36 w-36 rounded-[2rem] border-4 border-white"
+                        : isSunriseDesign
+                        ? "rounded-full border-4 border-white"
                         : "rounded-full border-4 border-white"
                     } ${themeClasses.avatarFallback}`}
                   >
@@ -708,8 +763,12 @@ export function DigitalCardPage() {
               </div>
             </div>
 
-            {organizationBranding && !isSignatureDesign ? (
-              <div className="flex flex-col items-center mb-4">
+            {organizationBranding && !isEditorialDesign ? (
+              <div
+                className={`flex flex-col mb-4 ${
+                  isAuroraDesign ? "items-start" : "items-center"
+                }`}
+              >
                 {organizationBranding.organization_logo_url ? (
                   <img
                     src={organizationBranding.organization_logo_url}
@@ -725,12 +784,22 @@ export function DigitalCardPage() {
             ) : null}
 
             <div
-              className={isSignatureDesign ? "mb-6 text-left" : "text-center mb-6"}
+              className={
+                isEditorialDesign || isAuroraDesign
+                  ? "mb-6 text-left"
+                  : "text-center mb-6"
+              }
             >
               <h1
                 className={
                   isSignatureDesign
                     ? "mb-2 text-4xl font-bold leading-tight tracking-normal"
+                    : isExecutiveDesign
+                    ? "mb-2 text-4xl font-serif leading-tight tracking-normal text-[#d7c39a]"
+                    : isAuroraDesign
+                    ? "mb-2 text-4xl font-bold leading-tight tracking-normal"
+                    : isSunriseDesign
+                    ? "mb-2 text-3xl font-bold leading-tight tracking-normal"
                     : "text-3xl font-bold mb-2"
                 }
               >
@@ -752,7 +821,9 @@ export function DigitalCardPage() {
               {profile.location_label ? (
                 <p
                   className={`mt-3 text-sm flex items-center gap-2 ${
-                    isSignatureDesign ? "justify-start" : "justify-center"
+                    isEditorialDesign || isAuroraDesign
+                      ? "justify-start"
+                      : "justify-center"
                   } ${themeClasses.mutedText}`}
                 >
                   <MapPin className="w-4 h-4" />
@@ -764,7 +835,7 @@ export function DigitalCardPage() {
             {profile.bio ? (
               <p
                 className={`mb-6 text-sm leading-6 ${
-                  isSignatureDesign ? "text-left" : "text-center"
+                  isEditorialDesign || isAuroraDesign ? "text-left" : "text-center"
                 } ${themeClasses.mutedText}`}
               >
                 {profile.bio}
@@ -773,7 +844,9 @@ export function DigitalCardPage() {
 
             <div
               className={
-                isSignatureDesign
+                isEditorialDesign
+                  ? "mb-6 grid grid-cols-2 gap-3"
+                  : isPortraitDesign
                   ? "mb-6 grid grid-cols-2 gap-3"
                   : "space-y-3 mb-6"
               }
@@ -781,7 +854,7 @@ export function DigitalCardPage() {
               <button
                 onClick={handleSaveContact}
                 className={`flex w-full items-center justify-center gap-2 rounded-lg py-3 font-medium ${
-                  isSignatureDesign ? "col-span-2" : ""
+                  isEditorialDesign || isPortraitDesign ? "col-span-2" : ""
                 } ${themeClasses.primaryButton}`}
               >
                 <Download className="w-5 h-5" />
@@ -808,7 +881,9 @@ export function DigitalCardPage() {
 
               <div
                 className={
-                  isSignatureDesign ? "contents" : "grid grid-cols-2 gap-3"
+                  isEditorialDesign || isPortraitDesign
+                    ? "contents"
+                    : "grid grid-cols-2 gap-3"
                 }
               >
                 {profile.phone ? (
@@ -838,7 +913,7 @@ export function DigitalCardPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`flex w-full items-center justify-center gap-2 rounded-lg py-3 ${
-                    isSignatureDesign ? "col-span-2" : ""
+                    isEditorialDesign || isPortraitDesign ? "col-span-2" : ""
                   } ${themeClasses.secondaryButton}`}
                 >
                   <Globe className="w-5 h-5" />
@@ -852,7 +927,7 @@ export function DigitalCardPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`flex w-full items-center justify-center gap-2 rounded-lg py-3 ${
-                    isSignatureDesign ? "col-span-2" : ""
+                    isEditorialDesign || isPortraitDesign ? "col-span-2" : ""
                   } ${themeClasses.secondaryButton}`}
                 >
                   <MapPin className="w-5 h-5" />
@@ -864,14 +939,16 @@ export function DigitalCardPage() {
             {socials.length > 0 ? (
               <div
                 className={
-                  isSignatureDesign
+                  isEditorialDesign
                     ? "mb-6 border-t border-white/10 pt-6"
+                    : isPortraitDesign
+                    ? "mb-6 rounded-2xl bg-gray-50 p-4"
                     : "border-t pt-6 mb-6"
                 }
               >
                 <h3
                   className={`text-sm font-medium mb-4 ${
-                    isSignatureDesign ? "text-left" : "text-center"
+                    isEditorialDesign || isAuroraDesign ? "text-left" : "text-center"
                   } ${themeClasses.mutedText}`}
                 >
                   Connect on Social
@@ -880,6 +957,10 @@ export function DigitalCardPage() {
                   className={
                     isSignatureDesign
                       ? "grid grid-cols-5 gap-3"
+                      : isExecutiveDesign
+                      ? "grid grid-cols-5 gap-2"
+                      : isPortraitDesign
+                      ? "grid grid-cols-5 gap-2"
                       : "flex justify-center gap-4 flex-wrap"
                   }
                 >
@@ -900,7 +981,9 @@ export function DigitalCardPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`w-12 h-12 flex items-center justify-center transition-colors ${
-                          isSignatureDesign ? "rounded-2xl" : "rounded-full"
+                          isEditorialDesign || isAuroraDesign
+                            ? "rounded-2xl"
+                            : "rounded-full"
                         } ${themeClasses.socialButton}`}
                         aria-label={social.platform}
                       >
@@ -915,14 +998,16 @@ export function DigitalCardPage() {
             {leadCaptureAllowed ? (
               <div
                 className={
-                  isSignatureDesign
+                  isEditorialDesign
                     ? "border-t border-white/10 pt-6"
+                    : isPortraitDesign
+                    ? "rounded-2xl bg-gray-50 p-4"
                     : "border-t pt-6"
                 }
               >
                 <h3
                   className={
-                    isSignatureDesign
+                    isEditorialDesign || isAuroraDesign
                       ? "mb-4 text-left text-lg font-semibold"
                       : "text-center text-lg font-semibold mb-4"
                   }
@@ -996,8 +1081,10 @@ export function DigitalCardPage() {
             ) : (
               <div
                 className={
-                  isSignatureDesign
+                  isEditorialDesign
                     ? "border-t border-white/10 pt-6 text-left"
+                    : isPortraitDesign
+                    ? "rounded-2xl bg-gray-50 p-4 text-center"
                     : "border-t pt-6 text-center"
                 }
               >
