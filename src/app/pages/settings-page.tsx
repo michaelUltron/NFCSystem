@@ -28,6 +28,7 @@ const themeOptions = [
   { value: "minimal", label: "Minimal" },
   { value: "modern", label: "Modern" },
   { value: "dark", label: "Dark" },
+  { value: "signature", label: "Signature" },
 ];
 
 export function SettingsPage() {

@@ -159,6 +159,22 @@ function getThemeClasses(theme?: string | null) {
         modalBg: "bg-slate-900 text-white",
       };
 
+    case "signature":
+      return {
+        pageBg: "bg-[#eef1ec]",
+        cardBg: "bg-[#101815] text-white",
+        headerBg: "bg-[#b9f27c]",
+        avatarFallback: "bg-[#b9f27c] text-[#101815]",
+        primaryButton: "bg-[#b9f27c] text-[#101815] hover:bg-[#a6df68]",
+        secondaryButton:
+          "border border-white/15 bg-white/[0.08] text-white hover:bg-white/[0.12]",
+        socialButton: "bg-white/10 hover:bg-white/15 text-white",
+        accentText: "text-[#b9f27c]",
+        mutedText: "text-white/70",
+        footerText: "text-white/45",
+        modalBg: "bg-[#101815] text-white",
+      };
+
     case "default":
     default:
       return {
@@ -350,6 +366,8 @@ export function DigitalCardPage() {
     return undefined;
   }, [organizationBranding]);
 
+  const isSignatureDesign = profile?.theme === "signature";
+
   const handleSaveContact = async () => {
     if (!profile) return;
 
@@ -498,28 +516,91 @@ export function DigitalCardPage() {
   return (
     <>
       <div
-        className={`min-h-screen flex items-center justify-center p-4 ${themeClasses.pageBg}`}
+        className={`min-h-screen flex items-center justify-center p-4 ${
+          isSignatureDesign ? "bg-[#eef1ec]" : themeClasses.pageBg
+        }`}
       >
         <div
-          className={`max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden ${themeClasses.cardBg}`}
+          className={`w-full overflow-hidden shadow-2xl ${
+            isSignatureDesign
+              ? "max-w-md rounded-[2rem] bg-[#101815] text-white"
+              : `max-w-lg rounded-2xl ${themeClasses.cardBg}`
+          }`}
         >
           <div
-            className={`h-32 ${!brandHeaderStyle ? themeClasses.headerBg : ""}`}
-            style={brandHeaderStyle}
-          ></div>
+            className={
+              isSignatureDesign
+                ? "relative h-44 overflow-hidden bg-[#17231f] p-5"
+                : `h-32 ${!brandHeaderStyle ? themeClasses.headerBg : ""}`
+            }
+            style={!isSignatureDesign ? brandHeaderStyle : undefined}
+          >
+            {isSignatureDesign ? (
+              <>
+                <div className="absolute inset-x-5 top-5 flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {organizationBranding?.organization_logo_url ? (
+                      <img
+                        src={organizationBranding.organization_logo_url}
+                        alt={organizationBranding.organization_name}
+                        className="h-10 w-10 rounded-xl border border-white/10 bg-white object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10">
+                        <Building2 className="h-5 w-5 text-[#b9f27c]" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-white">
+                        {displayCompany || "SabiCard"}
+                      </p>
+                      <p className="truncate text-xs text-white/55">
+                        Digital business card
+                      </p>
+                    </div>
+                  </div>
 
-          <div className="px-6 pb-8">
-            <div className="flex justify-center -mt-16 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowQrModal(true)}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white hover:bg-white/15"
+                    aria-label="Show QR code"
+                  >
+                    <QrCode className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="absolute bottom-5 left-5 right-5 h-px bg-white/12" />
+              </>
+            ) : null}
+          </div>
+
+          <div className={isSignatureDesign ? "px-5 pb-6" : "px-6 pb-8"}>
+            <div
+              className={
+                isSignatureDesign
+                  ? "mb-5 flex justify-start -mt-16"
+                  : "flex justify-center -mt-16 mb-4"
+              }
+            >
               <div className="relative">
                 {profile.avatar_url ? (
                   <ImageWithFallback
                     src={profile.avatar_url}
                     alt={profile.full_name || "Profile photo"}
-                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
+                    className={
+                      isSignatureDesign
+                        ? "h-32 w-32 rounded-[1.65rem] border-4 border-[#101815] object-cover shadow-2xl"
+                        : "w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
+                    }
                   />
                 ) : (
                   <div
-                    className={`w-32 h-32 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-3xl font-bold ${themeClasses.avatarFallback}`}
+                    className={`flex h-32 w-32 items-center justify-center text-3xl font-bold shadow-lg ${
+                      isSignatureDesign
+                        ? "rounded-[1.65rem] border-4 border-[#101815]"
+                        : "rounded-full border-4 border-white"
+                    } ${themeClasses.avatarFallback}`}
                   >
                     {initials}
                   </div>
@@ -527,7 +608,7 @@ export function DigitalCardPage() {
               </div>
             </div>
 
-            {organizationBranding ? (
+            {organizationBranding && !isSignatureDesign ? (
               <div className="flex flex-col items-center mb-4">
                 {organizationBranding.organization_logo_url ? (
                   <img
@@ -543,8 +624,16 @@ export function DigitalCardPage() {
               </div>
             ) : null}
 
-            <div className="text-center mb-6">
-              <h1 className="text-3xl font-bold mb-2">
+            <div
+              className={isSignatureDesign ? "mb-6 text-left" : "text-center mb-6"}
+            >
+              <h1
+                className={
+                  isSignatureDesign
+                    ? "mb-2 text-4xl font-bold leading-tight tracking-normal"
+                    : "text-3xl font-bold mb-2"
+                }
+              >
                 {profile.full_name || "Unnamed User"}
               </h1>
 
@@ -562,7 +651,9 @@ export function DigitalCardPage() {
 
               {profile.location_label ? (
                 <p
-                  className={`mt-3 text-sm flex items-center justify-center gap-2 ${themeClasses.mutedText}`}
+                  className={`mt-3 text-sm flex items-center gap-2 ${
+                    isSignatureDesign ? "justify-start" : "justify-center"
+                  } ${themeClasses.mutedText}`}
                 >
                   <MapPin className="w-4 h-4" />
                   {profile.location_label}
@@ -571,15 +662,27 @@ export function DigitalCardPage() {
             </div>
 
             {profile.bio ? (
-              <p className={`text-center mb-6 text-sm ${themeClasses.mutedText}`}>
+              <p
+                className={`mb-6 text-sm leading-6 ${
+                  isSignatureDesign ? "text-left" : "text-center"
+                } ${themeClasses.mutedText}`}
+              >
                 {profile.bio}
               </p>
             ) : null}
 
-            <div className="space-y-3 mb-6">
+            <div
+              className={
+                isSignatureDesign
+                  ? "mb-6 grid grid-cols-2 gap-3"
+                  : "space-y-3 mb-6"
+              }
+            >
               <button
                 onClick={handleSaveContact}
-                className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-medium ${themeClasses.primaryButton}`}
+                className={`flex w-full items-center justify-center gap-2 rounded-lg py-3 font-medium ${
+                  isSignatureDesign ? "col-span-2" : ""
+                } ${themeClasses.primaryButton}`}
               >
                 <Download className="w-5 h-5" />
                 Save Contact
@@ -597,13 +700,17 @@ export function DigitalCardPage() {
                     }
                   }
                 }}
-                className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 font-medium ${themeClasses.secondaryButton}`}
+                className={`flex w-full items-center justify-center gap-2 rounded-lg py-3 font-medium ${themeClasses.secondaryButton}`}
               >
                 <QrCode className="w-5 h-5" />
                 Show QR Code
               </button>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div
+                className={
+                  isSignatureDesign ? "contents" : "grid grid-cols-2 gap-3"
+                }
+              >
                 {profile.phone ? (
                   <a
                     href={`tel:${profile.phone}`}
@@ -630,7 +737,9 @@ export function DigitalCardPage() {
                   href={profile.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  className={`flex w-full items-center justify-center gap-2 rounded-lg py-3 ${
+                    isSignatureDesign ? "col-span-2" : ""
+                  } ${themeClasses.secondaryButton}`}
                 >
                   <Globe className="w-5 h-5" />
                   Visit Website
@@ -642,7 +751,9 @@ export function DigitalCardPage() {
                   href={locationHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-full flex items-center justify-center gap-2 rounded-lg py-3 ${themeClasses.secondaryButton}`}
+                  className={`flex w-full items-center justify-center gap-2 rounded-lg py-3 ${
+                    isSignatureDesign ? "col-span-2" : ""
+                  } ${themeClasses.secondaryButton}`}
                 >
                   <MapPin className="w-5 h-5" />
                   Open Location
@@ -651,13 +762,27 @@ export function DigitalCardPage() {
             </div>
 
             {socials.length > 0 ? (
-              <div className="border-t pt-6 mb-6">
+              <div
+                className={
+                  isSignatureDesign
+                    ? "mb-6 border-t border-white/10 pt-6"
+                    : "border-t pt-6 mb-6"
+                }
+              >
                 <h3
-                  className={`text-center text-sm font-medium mb-4 ${themeClasses.mutedText}`}
+                  className={`text-sm font-medium mb-4 ${
+                    isSignatureDesign ? "text-left" : "text-center"
+                  } ${themeClasses.mutedText}`}
                 >
                   Connect on Social
                 </h3>
-                <div className="flex justify-center gap-4 flex-wrap">
+                <div
+                  className={
+                    isSignatureDesign
+                      ? "grid grid-cols-5 gap-3"
+                      : "flex justify-center gap-4 flex-wrap"
+                  }
+                >
                   {socials.map((social) => {
                     const Icon = socialIcons[social.platform];
                     if (!Icon) return null;
@@ -674,7 +799,9 @@ export function DigitalCardPage() {
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${themeClasses.socialButton}`}
+                        className={`w-12 h-12 flex items-center justify-center transition-colors ${
+                          isSignatureDesign ? "rounded-2xl" : "rounded-full"
+                        } ${themeClasses.socialButton}`}
                         aria-label={social.platform}
                       >
                         <Icon className="w-6 h-6" />
@@ -686,8 +813,20 @@ export function DigitalCardPage() {
             ) : null}
 
             {canUseLeads(ownerPlan) ? (
-              <div className="border-t pt-6">
-                <h3 className="text-center text-lg font-semibold mb-4">
+              <div
+                className={
+                  isSignatureDesign
+                    ? "border-t border-white/10 pt-6"
+                    : "border-t pt-6"
+                }
+              >
+                <h3
+                  className={
+                    isSignatureDesign
+                      ? "mb-4 text-left text-lg font-semibold"
+                      : "text-center text-lg font-semibold mb-4"
+                  }
+                >
                   Leave Your Details
                 </h3>
 
@@ -755,7 +894,13 @@ export function DigitalCardPage() {
                 </form>
               </div>
             ) : (
-              <div className="border-t pt-6 text-center">
+              <div
+                className={
+                  isSignatureDesign
+                    ? "border-t border-white/10 pt-6 text-left"
+                    : "border-t pt-6 text-center"
+                }
+              >
                 <p className={`text-sm ${themeClasses.mutedText}`}>
                   Lead capture is available on Pro and Business plans.
                 </p>
