@@ -13,6 +13,7 @@ export type ProfileRow = {
   location_url: string | null;
   bio: string | null;
   avatar_url: string | null;
+  cover_photo_url: string | null;
   theme: string | null;
   organization_id: string | null;
   managed_by_organization: boolean | null;
@@ -48,6 +49,7 @@ const PROFILE_SELECT = `
   location_url,
   bio,
   avatar_url,
+  cover_photo_url,
   theme,
   organization_id,
   managed_by_organization,

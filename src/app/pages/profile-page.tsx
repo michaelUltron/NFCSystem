@@ -87,6 +87,7 @@ type FormState = {
   location_url: string;
   bio: string;
   avatar_url: string;
+  cover_photo_url: string;
 };
 
 const DEFAULT_MAP_CENTER = {
@@ -141,6 +142,7 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
   const uploadButtonRef = useRef<HTMLButtonElement | null>(null);
   const photoSectionRef = useRef<HTMLDivElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
@@ -160,6 +162,7 @@ export function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTourTarget, setActiveTourTarget] = useState("");
@@ -190,6 +193,7 @@ export function ProfilePage() {
     location_url: "",
     bio: "",
     avatar_url: "",
+    cover_photo_url: "",
   });
 
   const [socials, setSocials] = useState<Record<string, string>>({
@@ -230,6 +234,7 @@ export function ProfilePage() {
             location_url: profile.location_url ?? "",
             bio: profile.bio ?? "",
             avatar_url: profile.avatar_url ?? "",
+            cover_photo_url: profile.cover_photo_url ?? "",
           });
         }
 
@@ -383,6 +388,43 @@ export function ProfilePage() {
     }
   };
 
+  const handleCoverFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingCover(true);
+      setError("");
+      setSuccess("");
+
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Please upload a valid image file.");
+      }
+
+      if (file.size > 8 * 1024 * 1024) {
+        throw new Error("Cover photo must be 8MB or smaller.");
+      }
+
+      const result = await uploadProfileImage(file);
+
+      setForm((prev) => ({
+        ...prev,
+        cover_photo_url: result.publicUrl,
+      }));
+
+      setSuccess("Cover photo uploaded. Click Save Profile to keep it.");
+    } catch (err: any) {
+      setError(err.message || "Failed to upload cover photo.");
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) {
+        coverInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError("");
@@ -409,6 +451,7 @@ export function ProfilePage() {
         location_url: form.location_url.trim(),
         bio: form.bio.trim(),
         avatar_url: form.avatar_url.trim(),
+        cover_photo_url: form.cover_photo_url.trim(),
       });
 
       await replaceMySocialLinks(
@@ -973,6 +1016,63 @@ export function ProfilePage() {
                     </div>
                   </div>
 
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium mb-2">
+                      Cover Photo
+                    </label>
+
+                    <div className="rounded-xl border overflow-hidden bg-gray-50">
+                      <div className="h-36 bg-gradient-to-r from-indigo-600 to-blue-600">
+                        {form.cover_photo_url ? (
+                          <ImageWithFallback
+                            src={form.cover_photo_url}
+                            alt="Cover photo"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+
+                      <div className="p-4">
+                        <input
+                          ref={coverInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleCoverFileChange}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => coverInputRef.current?.click()}
+                          disabled={uploadingCover}
+                          className="inline-flex items-center gap-2 border rounded-lg px-4 py-2 hover:bg-white disabled:opacity-60"
+                        >
+                          <Upload className="w-4 h-4" />
+                          {uploadingCover ? "Uploading..." : "Upload Cover"}
+                        </button>
+
+                        {form.cover_photo_url ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setForm((prev) => ({
+                                ...prev,
+                                cover_photo_url: "",
+                              }))
+                            }
+                            className="ml-3 inline-flex items-center gap-2 border rounded-lg px-4 py-2 hover:bg-white"
+                          >
+                            Remove
+                          </button>
+                        ) : null}
+
+                        <p className="text-xs text-gray-500 mt-2">
+                          Upload a wide JPG, PNG, or WEBP up to 8MB.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div
                       className={`p-2 -m-2 ${getTourHighlightClass(
@@ -1398,7 +1498,15 @@ export function ProfilePage() {
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <h2 className="text-xl font-semibold mb-4">Public Preview</h2>
                   <div className="rounded-2xl border overflow-hidden">
-                    <div className="h-20 bg-gradient-to-r from-indigo-600 to-blue-600"></div>
+                    <div className="h-20 bg-gradient-to-r from-indigo-600 to-blue-600">
+                      {form.cover_photo_url ? (
+                        <ImageWithFallback
+                          src={form.cover_photo_url}
+                          alt="Cover preview"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </div>
                     <div className="px-4 pb-4 -mt-10">
                       <div className="w-20 h-20 rounded-full border-4 border-white bg-indigo-100 overflow-hidden mx-auto flex items-center justify-center text-indigo-600 font-semibold text-xl">
                         {form.avatar_url ? (

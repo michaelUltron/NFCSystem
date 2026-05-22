@@ -396,6 +396,10 @@ export function DigitalCardPage() {
   }, [profile?.location_url]);
 
   const brandHeaderStyle = useMemo(() => {
+    if (profile?.cover_photo_url) {
+      return undefined;
+    }
+
     if (
       organizationBranding?.brand_primary_color &&
       organizationBranding?.brand_secondary_color
@@ -412,7 +416,7 @@ export function DigitalCardPage() {
     }
 
     return undefined;
-  }, [organizationBranding]);
+  }, [organizationBranding, profile?.cover_photo_url]);
 
   const isSignatureDesign = profile?.theme === "signature";
 
@@ -583,6 +587,23 @@ export function DigitalCardPage() {
             }
             style={!isSignatureDesign ? brandHeaderStyle : undefined}
           >
+            {profile.cover_photo_url ? (
+              <>
+                <ImageWithFallback
+                  src={profile.cover_photo_url}
+                  alt={`${profile.full_name || "Profile"} cover photo`}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div
+                  className={`absolute inset-0 ${
+                    isSignatureDesign
+                      ? "bg-[#101815]/65"
+                      : "bg-gradient-to-b from-black/15 to-black/35"
+                  }`}
+                />
+              </>
+            ) : null}
+
             {isSignatureDesign ? (
               <>
                 <div className="absolute inset-x-5 top-5 flex items-center justify-between gap-3">
