@@ -23,6 +23,7 @@ import {
   User,
   BadgeCheck,
   Check,
+  X,
 } from "lucide-react";
 
 const themeOptions = [
@@ -166,6 +167,8 @@ export function SettingsPage() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [theme, setTheme] = useState("default");
+  const [draftTheme, setDraftTheme] = useState("default");
+  const [themeDialogOpen, setThemeDialogOpen] = useState(false);
   const [plan, setPlan] = useState("free");
   const [access, setAccess] = useState<TrialFeatureAccess | null>(null);
 
@@ -190,6 +193,7 @@ export function SettingsPage() {
         setFullName(result.profile.full_name || "");
         setUsername(result.profile.username || "");
         setTheme(result.profile.theme || "default");
+        setDraftTheme(result.profile.theme || "default");
         setPlan(subscription?.plan || "free");
         setAccess(currentAccess);
       } catch (err: any) {
@@ -215,6 +219,8 @@ export function SettingsPage() {
       }
 
       await updateMyTheme(theme);
+      setDraftTheme(theme);
+      setThemeDialogOpen(false);
       setSuccess("Settings updated successfully.");
     } catch (err: any) {
       setError(err.message || "Failed to save settings.");
@@ -265,14 +271,56 @@ export function SettingsPage() {
     }
   };
 
+  const selectedThemeOption =
+    themeOptions.find((option) => option.value === theme) ?? themeOptions[0];
+  const draftThemeOption =
+    themeOptions.find((option) => option.value === draftTheme) ??
+    selectedThemeOption;
+
+  const openThemeDialog = () => {
+    setDraftTheme(theme);
+    setThemeDialogOpen(true);
+  };
+
+  const closeThemeDialog = () => {
+    setDraftTheme(theme);
+    setThemeDialogOpen(false);
+  };
+
+  const handleApplyTheme = async () => {
+    setTheme(draftTheme);
+
+    try {
+      setSavingTheme(true);
+      setError("");
+      setSuccess("");
+
+      if (!access?.canUseThemes) {
+        throw new Error(
+          "Your free trial for theme customization has ended. Upgrade to Pro or Business to keep using themes."
+        );
+      }
+
+      await updateMyTheme(draftTheme);
+      setTheme(draftTheme);
+      setThemeDialogOpen(false);
+      setSuccess("Settings updated successfully.");
+    } catch (err: any) {
+      setError(err.message || "Failed to save settings.");
+    } finally {
+      setSavingTheme(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <>
+      <div className="flex min-h-screen bg-gray-50">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col">
-        <TopNavbar onMenuClick={() => setSidebarOpen(true)} />
+        <div className="flex-1 flex flex-col">
+          <TopNavbar onMenuClick={() => setSidebarOpen(true)} />
 
-        <main className="flex-1 p-6">
+          <main className="flex-1 p-6">
           <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-3xl font-bold mb-2">Settings</h1>
@@ -364,49 +412,47 @@ export function SettingsPage() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                      {themeOptions.map((option) => {
-                        const selected = theme === option.value;
-                        return (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr]">
+                      <ThemePreview
+                        value={selectedThemeOption.value}
+                        swatch={selectedThemeOption.swatch}
+                      />
+
+                      <div className="flex flex-col justify-between rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            Current theme
+                          </p>
+                          <h3 className="mt-1 text-2xl font-semibold text-gray-900">
+                            {selectedThemeOption.label}
+                          </h3>
+                          <p className="mt-2 text-sm text-gray-600">
+                            {selectedThemeOption.description}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-3">
                           <button
                             type="button"
-                            key={option.value}
-                            onClick={() => setTheme(option.value)}
+                            onClick={openThemeDialog}
                             disabled={!access?.canUseThemes}
-                            className={`group rounded-xl border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-                              selected
-                                ? "border-indigo-500 bg-indigo-50 shadow-sm"
-                                : "border-gray-200 bg-white hover:border-indigo-200 hover:shadow-sm"
-                            }`}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
                           >
-                            <ThemePreview
-                              value={option.value}
-                              swatch={option.swatch}
-                            />
-
-                            <div className="mt-3 flex items-start justify-between gap-3">
-                              <div>
-                                <p className="font-semibold text-gray-900">
-                                  {option.label}
-                                </p>
-                                <p className="mt-1 text-xs text-gray-500">
-                                  {option.description}
-                                </p>
-                              </div>
-
-                              <span
-                                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                                  selected
-                                    ? "border-indigo-600 bg-indigo-600 text-white"
-                                    : "border-gray-300 text-transparent"
-                                }`}
-                              >
-                                <Check className="h-4 w-4" />
-                              </span>
-                            </div>
+                            <Palette className="h-4 w-4" />
+                            Change Theme
                           </button>
-                        );
-                      })}
+
+                          <button
+                            type="button"
+                            onClick={handleSaveTheme}
+                            disabled={savingTheme || !access?.canUseThemes}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white disabled:opacity-60"
+                          >
+                            <Save className="h-4 w-4" />
+                            {savingTheme ? "Saving..." : "Save Current"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     {!access?.canUseThemes ? (
@@ -428,15 +474,6 @@ export function SettingsPage() {
                       </div>
                     ) : null}
 
-                    <button
-                      type="button"
-                      onClick={handleSaveTheme}
-                      disabled={savingTheme || !access?.canUseThemes}
-                      className="mt-4 inline-flex items-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60"
-                    >
-                      <Save className="w-4 h-4" />
-                      {savingTheme ? "Saving..." : "Save Theme"}
-                    </button>
                   </div>
                 </div>
 
@@ -547,8 +584,105 @@ export function SettingsPage() {
               </div>
             </div>
           )}
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+
+      {themeDialogOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b px-6 py-4">
+              <div>
+                <h2 className="text-xl font-semibold">Choose Card Theme</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Preview each style, then apply the theme to your public card.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeThemeDialog}
+                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close theme selector"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {themeOptions.map((option) => {
+                  const selected = draftTheme === option.value;
+                  return (
+                    <button
+                      type="button"
+                      key={option.value}
+                      onClick={() => setDraftTheme(option.value)}
+                      className={`group rounded-xl border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                        selected
+                          ? "border-indigo-500 bg-indigo-50 shadow-sm"
+                          : "border-gray-200 bg-white hover:border-indigo-200 hover:shadow-sm"
+                      }`}
+                    >
+                      <ThemePreview value={option.value} swatch={option.swatch} />
+
+                      <div className="mt-3 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {option.label}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {option.description}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                            selected
+                              ? "border-indigo-600 bg-indigo-600 text-white"
+                              : "border-gray-300 text-transparent"
+                          }`}
+                        >
+                          <Check className="h-4 w-4" />
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-gray-50 px-6 py-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Selected: {draftThemeOption.label}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {draftThemeOption.description}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeThemeDialog}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyTheme}
+                  disabled={savingTheme}
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  <Save className="h-4 w-4" />
+                  {savingTheme ? "Saving..." : "Apply Theme"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
