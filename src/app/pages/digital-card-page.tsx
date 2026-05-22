@@ -61,6 +61,54 @@ const socialIcons: Record<string, any> = {
   whatsapp: FaWhatsapp,
 };
 
+type CachedPublicCardData = {
+  profile: ProfileRow;
+  socials: SocialLinkRow[];
+  organizationBranding: PublicOrganizationBrandingRow | null;
+  ownerAccess: TrialFeatureAccess | null;
+  ownerPlan: string;
+  cachedAt: number;
+};
+
+const PUBLIC_CARD_CACHE_PREFIX = "sabicard_public_card:";
+const PUBLIC_CARD_CACHE_TTL = 10 * 60 * 1000;
+
+function getPublicCardCacheKey(username: string) {
+  return `${PUBLIC_CARD_CACHE_PREFIX}${username.trim().toLowerCase()}`;
+}
+
+function readCachedPublicCard(username: string) {
+  try {
+    const raw = localStorage.getItem(getPublicCardCacheKey(username));
+    if (!raw) return null;
+
+    const cached = JSON.parse(raw) as CachedPublicCardData;
+    if (!cached?.profile?.id || Date.now() - cached.cachedAt > PUBLIC_CARD_CACHE_TTL) {
+      localStorage.removeItem(getPublicCardCacheKey(username));
+      return null;
+    }
+
+    return cached;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedPublicCard(username: string, data: CachedPublicCardData) {
+  try {
+    localStorage.setItem(getPublicCardCacheKey(username), JSON.stringify(data));
+  } catch {
+    // cache failure should never block the public card
+  }
+}
+
+function preloadImage(url?: string | null) {
+  if (!url) return;
+  const image = new Image();
+  image.decoding = "async";
+  image.src = url;
+}
+
 function escapeVCardValue(value?: string | null) {
   return (value || "")
     .replace(/\\/g, "\\\\")
@@ -262,6 +310,49 @@ function getThemeClasses(theme?: string | null) {
   }
 }
 
+function PublicCardSkeleton({
+  themeClasses,
+}: {
+  themeClasses: ReturnType<typeof getThemeClasses>;
+}) {
+  return (
+    <div
+      className={`w-full max-w-md overflow-hidden rounded-2xl shadow-xl ${themeClasses.cardBg}`}
+    >
+      <div className={`h-36 animate-pulse ${themeClasses.headerBg}`} />
+      <div className="px-6 pb-8">
+        <div className="-mt-12 mb-5 flex justify-center">
+          <div className="h-24 w-24 rounded-full border-4 border-white bg-gray-200 shadow-lg animate-pulse" />
+        </div>
+
+        <div className="mx-auto mb-6 space-y-3">
+          <div className="mx-auto h-7 w-44 rounded-full bg-gray-200 animate-pulse" />
+          <div className="mx-auto h-4 w-32 rounded-full bg-gray-200 animate-pulse" />
+          <div className="mx-auto h-4 w-40 rounded-full bg-gray-200 animate-pulse" />
+        </div>
+
+        <div className="mb-6 space-y-3">
+          <div className="h-12 rounded-lg bg-gray-200 animate-pulse" />
+          <div className="h-12 rounded-lg bg-gray-200 animate-pulse" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="h-12 rounded-lg bg-gray-200 animate-pulse" />
+            <div className="h-12 rounded-lg bg-gray-200 animate-pulse" />
+          </div>
+        </div>
+
+        <div className="flex justify-center gap-3">
+          {[0, 1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="h-11 w-11 rounded-full bg-gray-200 animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DigitalCardPage() {
   const { username } = useParams();
 
@@ -303,17 +394,30 @@ export function DigitalCardPage() {
         return;
       }
 
+      let renderedCached = false;
+
       try {
-        const publicProfile = await getPublicProfileByUsername(username);
-        if (cancelled) return;
-
-        setProfile(publicProfile);
-
         const urlParams = new URLSearchParams(window.location.search);
         const uidFromUrl = urlParams.get("uid");
         const uidFromSession = getPendingCardUid();
         const resolvedUid = uidFromUrl || uidFromSession || null;
+        const cached = readCachedPublicCard(username);
 
+        if (cached) {
+          renderedCached = true;
+          setCardUid(resolvedUid);
+          setProfile(cached.profile);
+          setSocials(cached.socials);
+          setOrganizationBranding(cached.organizationBranding);
+          setOwnerAccess(cached.ownerAccess);
+          setOwnerPlan(cached.ownerAccess?.plan || cached.ownerPlan || "free");
+          setLoading(false);
+        }
+
+        const publicProfile = await getPublicProfileByUsername(username);
+        if (cancelled) return;
+
+        setProfile(publicProfile);
         setCardUid(resolvedUid);
         setLoading(false);
 
@@ -349,10 +453,36 @@ export function DigitalCardPage() {
           setOwnerAccess(accessResult.value);
           setOwnerPlan(accessResult.value.plan);
         }
+
+        writeCachedPublicCard(username, {
+          profile: publicProfile,
+          socials:
+            linksResult.status === "fulfilled" ? linksResult.value : cached?.socials || [],
+          organizationBranding:
+            brandingResult.status === "fulfilled"
+              ? brandingResult.value
+              : cached?.organizationBranding || null,
+          ownerAccess:
+            accessResult.status === "fulfilled"
+              ? accessResult.value
+              : cached?.ownerAccess || null,
+          ownerPlan:
+            accessResult.status === "fulfilled"
+              ? accessResult.value.plan
+              : planResult.status === "fulfilled" &&
+                !planResult.value.error &&
+                planResult.value.data
+              ? planResult.value.data
+              : cached?.ownerPlan || "free",
+          cachedAt: Date.now(),
+        });
       } catch (err: any) {
         if (cancelled) return;
-        setError(err.message || "Card not found.");
-        setLoading(false);
+
+        if (!renderedCached) {
+          setError(err.message || "Card not found.");
+          setLoading(false);
+        }
       }
     };
 
@@ -478,6 +608,19 @@ export function DigitalCardPage() {
 
     return undefined;
   }, [organizationBranding, effectiveCoverUrl]);
+
+  useEffect(() => {
+    if (!profile) return;
+
+    preloadImage(profile.avatar_url);
+    preloadImage(effectiveCoverUrl);
+    preloadImage(organizationBranding?.organization_logo_url);
+  }, [
+    profile,
+    profile?.avatar_url,
+    effectiveCoverUrl,
+    organizationBranding?.organization_logo_url,
+  ]);
 
   const isSignatureDesign = effectiveTheme === "signature";
   const isExecutiveDesign = effectiveTheme === "executive";
@@ -608,14 +751,12 @@ export function DigitalCardPage() {
     }
   };
 
-  if (loading) {
+  if (loading && !profile) {
     return (
       <div
         className={`min-h-screen flex items-center justify-center p-4 ${themeClasses.pageBg}`}
       >
-        <div className={`rounded-2xl shadow-xl p-8 ${themeClasses.cardBg}`}>
-          Loading card...
-        </div>
+        <PublicCardSkeleton themeClasses={themeClasses} />
       </div>
     );
   }
