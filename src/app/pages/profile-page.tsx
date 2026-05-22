@@ -24,6 +24,8 @@ import {
   CheckCircle2,
   Circle,
   Camera,
+  CreditCard,
+  Sparkles,
   X,
 } from "lucide-react";
 import {
@@ -41,6 +43,7 @@ import {
 } from "../lib/profile-service";
 import { supabase } from "../lib/supabase";
 import { uploadProfileImage } from "../lib/storage-service";
+import { getMyCards } from "../lib/card-service";
 import {
   getMySubscription,
   getTrialFeatureAccess,
@@ -232,6 +235,7 @@ export function ProfilePage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [access, setAccess] = useState<TrialFeatureAccess | null>(null);
+  const [activatedCardCount, setActivatedCardCount] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTourTarget, setActiveTourTarget] = useState("");
@@ -286,13 +290,17 @@ export function ProfilePage() {
           return;
         }
 
-        const [profile, links, subscription] = await Promise.all([
+        const [profile, links, subscription, cards] = await Promise.all([
           getMyProfile(),
           getMySocialLinks(),
           getMySubscription(),
+          getMyCards().catch(() => []),
         ]);
 
         setAccess(getTrialFeatureAccess(subscription));
+        setActivatedCardCount(
+          cards.filter((card) => card.status === "active").length
+        );
 
         if (profile) {
           setForm({
@@ -383,9 +391,34 @@ export function ProfilePage() {
   const previewIsSunrise = previewThemeValue === "sunrise";
   const previewIsEditorial = previewIsSignature || previewIsExecutive;
   const previewIsPortrait = previewIsAurora || previewIsSunrise;
+  const hasIdentity = !!form.full_name.trim() && !!cleanUsername;
+  const hasRole = !!form.position.trim() || !!form.company.trim();
+  const hasContact =
+    !!form.phone.trim() || !!form.email.trim() || !!form.website.trim();
+  const hasLocationOrBio = !!form.location_label.trim() || !!form.bio.trim();
+  const socialCount = Object.values(socials).filter((url) => url.trim()).length;
+  const hasSocials = socialCount > 0;
+  const hasActivatedCard = activatedCardCount > 0;
+  const profileStrength = Math.min(
+    100,
+    (form.avatar_url ? 20 : 0) +
+      (hasIdentity ? 20 : 0) +
+      (hasRole ? 15 : 0) +
+      (hasContact ? 20 : 0) +
+      (hasLocationOrBio ? 10 : 0) +
+      (hasSocials ? 5 : 0) +
+      (hasActivatedCard ? 10 : 0)
+  );
+  const profileStrengthLabel =
+    profileStrength >= 85
+      ? "Ready to share"
+      : profileStrength >= 60
+      ? "Almost ready"
+      : "Needs essentials";
   const onboardingItems = [
     {
       label: "Upload a clear profile photo",
+      detail: "Use a friendly headshot so contacts know they found the right card.",
       complete: !!form.avatar_url,
       highlight: true,
       action: () =>
@@ -398,6 +431,7 @@ export function ProfilePage() {
     },
     {
       label: "Add your name and public username",
+      detail: "This gives your card a clean public link.",
       complete: !!form.full_name.trim() && !!cleanUsername,
       action: () =>
         focusOnboardingTarget({
@@ -408,11 +442,8 @@ export function ProfilePage() {
     },
     {
       label: "Add your role, company, and contact details",
-      complete:
-        !!form.position.trim() ||
-        !!form.company.trim() ||
-        !!form.phone.trim() ||
-        !!form.email.trim(),
+      detail: "Add the business details people should save.",
+      complete: hasRole && hasContact,
       action: () =>
         focusOnboardingTarget({
           key: "contact",
@@ -421,7 +452,24 @@ export function ProfilePage() {
         }),
     },
     {
+      label: "Activate your first NFC card",
+      detail: hasActivatedCard
+        ? `${activatedCardCount} active card${
+            activatedCardCount === 1 ? "" : "s"
+          } linked.`
+        : "Tap or scan the physical card to start activation.",
+      complete: hasActivatedCard,
+      action: () =>
+        focusOnboardingTarget({
+          key: "finish",
+          message:
+            "After saving, tap your physical NFC card with your phone or scan its QR code to activate it.",
+          sectionRef: statusSectionRef,
+        }),
+    },
+    {
       label: "Save and open your public card",
+      detail: "Check the live card exactly like a visitor will see it.",
       complete: false,
       action: () =>
         focusOnboardingTarget({
@@ -1017,7 +1065,53 @@ export function ProfilePage() {
                       </button>
                     </div>
 
-                    <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="mt-6 space-y-4">
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              Profile strength
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {profileStrengthLabel}
+                            </p>
+                          </div>
+                          <span className="text-2xl font-bold text-indigo-600">
+                            {profileStrength}%
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+                          <div
+                            className="h-full rounded-full bg-indigo-600 transition-all"
+                            style={{ width: `${profileStrength}%` }}
+                          />
+                        </div>
+                        <div className="mt-4 grid grid-cols-1 gap-3 text-sm text-gray-600 md:grid-cols-3">
+                          <div className="flex items-start gap-2">
+                            <Sparkles className="mt-0.5 h-4 w-4 text-indigo-500" />
+                            <span>
+                              Hint: use a real role, a reachable phone or email,
+                              and one strong social link.
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <CreditCard className="mt-0.5 h-4 w-4 text-indigo-500" />
+                            <span>
+                              Activation: tap your NFC card with your phone, then
+                              confirm it under this account.
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <Eye className="mt-0.5 h-4 w-4 text-indigo-500" />
+                            <span>
+                              Final step: save, preview the public card, then test
+                              Save Contact.
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                       {onboardingItems.map((item, index) => {
                         const Icon = item.complete ? CheckCircle2 : Circle;
                         return (
@@ -1048,9 +1142,13 @@ export function ProfilePage() {
                             <p className="text-sm font-medium text-gray-900">
                               {item.label}
                             </p>
+                            <p className="mt-2 text-xs text-gray-500">
+                              {item.detail}
+                            </p>
                           </button>
                         );
                       })}
+                    </div>
                     </div>
                   </div>
                 ) : null}
@@ -1220,6 +1318,7 @@ export function ProfilePage() {
                           ref={nameInputRef}
                           type="text"
                           id="full_name"
+                          placeholder="Maria Santos"
                           className="border rounded-lg px-3 py-2 pl-10 w-full"
                           value={form.full_name}
                           onChange={(e) =>
@@ -1230,6 +1329,11 @@ export function ProfilePage() {
                           }
                         />
                       </div>
+                      {onboardingMode ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Sample: Maria Santos
+                        </p>
+                      ) : null}
                     </div>
 
                     <div
@@ -1250,6 +1354,7 @@ export function ProfilePage() {
                         <input
                           type="text"
                           id="username"
+                          placeholder="maria-santos"
                           className="border rounded-lg px-3 py-2 pl-10 w-full"
                           value={form.username}
                           onChange={(e) =>
@@ -1268,6 +1373,11 @@ export function ProfilePage() {
                           ? `${window.location.origin}/card/${form.username}`
                           : "generated after you set username"}
                       </p>
+                      {onboardingMode ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Tip: keep it short and easy to spell.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div
@@ -1288,6 +1398,7 @@ export function ProfilePage() {
                         <input
                           type="text"
                           id="company"
+                          placeholder="SabiCard"
                           className="border rounded-lg px-3 py-2 pl-10 w-full"
                           value={form.company}
                           onChange={(e) =>
@@ -1298,6 +1409,11 @@ export function ProfilePage() {
                           }
                         />
                       </div>
+                      {onboardingMode ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Sample: SabiCard, Freelance, or your shop name.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div
@@ -1318,6 +1434,7 @@ export function ProfilePage() {
                         <input
                           type="text"
                           id="position"
+                          placeholder="Founder"
                           className="border rounded-lg px-3 py-2 pl-10 w-full"
                           value={form.position}
                           onChange={(e) =>
@@ -1328,6 +1445,11 @@ export function ProfilePage() {
                           }
                         />
                       </div>
+                      {onboardingMode ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Sample: Founder, Sales Manager, Real Estate Agent.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div
@@ -1348,6 +1470,7 @@ export function ProfilePage() {
                         <input
                           type="tel"
                           id="phone"
+                          placeholder="+63 917 123 4567"
                           className="border rounded-lg px-3 py-2 pl-10 w-full"
                           value={form.phone}
                           onChange={(e) =>
@@ -1358,6 +1481,11 @@ export function ProfilePage() {
                           }
                         />
                       </div>
+                      {onboardingMode ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Add the number visitors should call or save.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div
@@ -1378,6 +1506,7 @@ export function ProfilePage() {
                         <input
                           type="email"
                           id="email"
+                          placeholder="hello@sabicard.com"
                           className="border rounded-lg px-3 py-2 pl-10 w-full"
                           value={form.email}
                           onChange={(e) =>
@@ -1388,6 +1517,11 @@ export function ProfilePage() {
                           }
                         />
                       </div>
+                      {onboardingMode ? (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Use the public inbox for client inquiries.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div
@@ -1408,6 +1542,7 @@ export function ProfilePage() {
                         <input
                           type="url"
                           id="website"
+                          placeholder="https://yourwebsite.com"
                           className="border rounded-lg px-3 py-2 pl-10 w-full"
                           value={form.website}
                           onChange={(e) =>
@@ -1520,17 +1655,39 @@ export function ProfilePage() {
                     <textarea
                       id="bio"
                       rows={4}
+                      placeholder="I help local businesses modernize customer connections with smart digital cards."
                       className="border rounded-lg px-3 py-2 w-full"
                       value={form.bio}
                       onChange={(e) =>
                         setForm((prev) => ({ ...prev, bio: e.target.value }))
                       }
                     />
+                    {onboardingMode ? (
+                      <p className="mt-1 text-xs text-gray-500">
+                        One short sentence is enough. Focus on what you do and
+                        who you help.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-6">
-                  <h2 className="text-xl font-semibold mb-6">Social Links</h2>
+                  <div className="mb-6 flex items-start justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold">Social Links</h2>
+                      {onboardingMode ? (
+                        <p className="mt-1 text-sm text-gray-500">
+                          Add at least one link where visitors can learn more
+                          about you.
+                        </p>
+                      ) : null}
+                    </div>
+                    {onboardingMode && hasSocials ? (
+                      <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
+                        {socialCount} added
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="space-y-4">
                     {socialPlatforms.map((platform) => {
                       const Icon = platform.icon;
@@ -1584,6 +1741,28 @@ export function ProfilePage() {
                   {success ? (
                     <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700 mb-4">
                       {success}
+                    </div>
+                  ) : null}
+
+                  {onboardingMode ? (
+                    <div className="mb-4 rounded-lg border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-800">
+                      <div className="mb-2 flex items-center gap-2 font-semibold">
+                        <CreditCard className="h-4 w-4" />
+                        First card activation
+                      </div>
+                      {hasActivatedCard ? (
+                        <p>
+                          You already have {activatedCardCount} active NFC card
+                          {activatedCardCount === 1 ? "" : "s"} connected to
+                          this account.
+                        </p>
+                      ) : (
+                        <p>
+                          After saving this profile, tap your physical NFC card
+                          on your phone or scan its QR code. Sign in with this
+                          account and confirm activation.
+                        </p>
+                      )}
                     </div>
                   ) : null}
 
