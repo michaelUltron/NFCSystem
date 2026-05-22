@@ -6,6 +6,17 @@ export type CardTapDestination = {
   username: string | null;
 };
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      window.setTimeout(() => {
+        reject(new Error("Card lookup timed out. Please try again."));
+      }, timeoutMs);
+    }),
+  ]);
+}
+
 export async function getCardTapDestination(cardUid: string) {
   const cleanedUid = cardUid.trim();
 
@@ -13,9 +24,12 @@ export async function getCardTapDestination(cardUid: string) {
     throw new Error("Missing card UID.");
   }
 
-  const { data, error } = await supabase.rpc("get_card_tap_destination", {
-    p_card_uid: cleanedUid,
-  });
+  const { data, error } = await withTimeout(
+    supabase.rpc("get_card_tap_destination", {
+      p_card_uid: cleanedUid,
+    }),
+    8000
+  );
 
   if (error) throw error;
 
