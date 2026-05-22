@@ -15,11 +15,16 @@ export function ActivationPage() {
   const navigate = useNavigate();
 
   const cardUid = useMemo(() => searchParams.get("uid") ?? "", [searchParams]);
+  const activationPath = useMemo(
+    () => (cardUid ? `/activate?uid=${cardUid}` : "/activate"),
+    [cardUid]
+  );
 
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
   const [message, setMessage] = useState("Checking your card...");
   const [error, setError] = useState("");
+  const [manualCardUid, setManualCardUid] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [cardAlreadyOwned, setCardAlreadyOwned] = useState(false);
   const [isBusinessAccount, setIsBusinessAccount] = useState(false);
@@ -28,7 +33,19 @@ export function ActivationPage() {
     const run = async () => {
       if (!cardUid) {
         clearPendingCardUid();
-        setError("Missing card UID in URL.");
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setMessage("Please sign in or create an account to activate your card.");
+          setLoading(false);
+          return;
+        }
+
+        setCurrentUser(user);
+        setMessage("Enter the UID printed on your NFC card or scan its QR code.");
         setLoading(false);
         return;
       }
@@ -111,6 +128,17 @@ export function ActivationPage() {
 
     run();
   }, [cardUid, navigate]);
+
+  const handleStartManualActivation = () => {
+    const uid = manualCardUid.trim();
+
+    if (!uid) {
+      setError("Enter your card UID first.");
+      return;
+    }
+
+    navigate(`/activate?uid=${encodeURIComponent(uid)}`);
+  };
 
   const handleConfirmActivation = async () => {
     try {
@@ -199,9 +227,16 @@ export function ActivationPage() {
               <input
                 type="text"
                 id="cardUid"
-                value={cardUid}
-                className="border rounded-lg px-4 py-3 w-full font-mono bg-gray-50"
-                readOnly
+                value={cardUid || manualCardUid}
+                onChange={(e) => {
+                  setManualCardUid(e.target.value);
+                  if (error) setError("");
+                }}
+                placeholder="Enter card UID"
+                className={`border rounded-lg px-4 py-3 w-full font-mono ${
+                  cardUid ? "bg-gray-50" : "bg-white"
+                }`}
+                readOnly={!!cardUid}
               />
             </div>
 
@@ -237,13 +272,13 @@ export function ActivationPage() {
             {!loading && !error && !currentUser && !cardAlreadyOwned && (
               <div className="space-y-3 pt-2">
                 <Link
-                  to={`/login?next=${encodeURIComponent(`/activate?uid=${cardUid}`)}`}
+                  to={`/login?next=${encodeURIComponent(activationPath)}`}
                   className="block w-full text-center bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-6 py-3 font-medium"
                 >
                   Sign In & Activate
                 </Link>
                 <Link
-                  to={`/register?next=${encodeURIComponent(`/activate?uid=${cardUid}`)}`}
+                  to={`/register?next=${encodeURIComponent(activationPath)}`}
                   className="block w-full text-center border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-6 py-3 font-medium"
                 >
                   Create Account
@@ -251,7 +286,24 @@ export function ActivationPage() {
               </div>
             )}
 
-            {!loading && !error && currentUser && !cardAlreadyOwned && (
+            {!loading && !error && currentUser && !cardUid && !cardAlreadyOwned && (
+              <div className="space-y-3 pt-2">
+                <button
+                  onClick={handleStartManualActivation}
+                  className="block w-full text-center bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-6 py-3 font-medium"
+                >
+                  Continue Activation
+                </button>
+                <Link
+                  to="/order"
+                  className="block w-full text-center border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-6 py-3 font-medium"
+                >
+                  Order a Card Instead
+                </Link>
+              </div>
+            )}
+
+            {!loading && !error && currentUser && cardUid && !cardAlreadyOwned && (
               <div className="space-y-3 pt-2">
                 <button
                   onClick={handleConfirmActivation}
