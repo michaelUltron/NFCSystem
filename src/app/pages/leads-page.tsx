@@ -4,8 +4,9 @@ import { TopNavbar } from "../components/top-navbar";
 import { getMyLeads, type LeadRow } from "../lib/lead-service";
 import {
   getMySubscription,
-  canUseLeads,
+  getTrialFeatureAccess,
   getPlanLabel,
+  type TrialFeatureAccess,
 } from "../lib/subscription-service";
 import { markLeadsSeen } from "../lib/notification-state";
 
@@ -15,6 +16,7 @@ export function LeadsPage() {
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [plan, setPlan] = useState("free");
   const [allowed, setAllowed] = useState(false);
+  const [access, setAccess] = useState<TrialFeatureAccess | null>(null);
     useEffect(() => {
   markLeadsSeen();
 }, []);
@@ -24,10 +26,12 @@ export function LeadsPage() {
       try {
         const subscription = await getMySubscription();
         const currentPlan = subscription?.plan || "free";
+        const currentAccess = getTrialFeatureAccess(subscription);
 
         setPlan(currentPlan);
+        setAccess(currentAccess);
 
-        if (!canUseLeads(currentPlan)) {
+        if (!currentAccess.canUseLeads) {
           setAllowed(false);
           return;
         }
@@ -63,18 +67,33 @@ export function LeadsPage() {
             </p>
           </div>
 
+          {!loading && access?.trialActive ? (
+            <div className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-800">
+              Your Free plan lead capture trial is active for{" "}
+              <strong>{access.trialDaysRemaining}</strong>{" "}
+              {access.trialDaysRemaining === 1 ? "day" : "days"}.
+            </div>
+          ) : null}
+
           <div className="bg-white rounded-xl shadow-md p-6">
             {loading ? (
               <p>Loading leads...</p>
             ) : !allowed ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <h2 className="font-semibold text-amber-800 mb-2">
-                  Upgrade required
+                  Free trial ended
                 </h2>
                 <p className="text-sm text-amber-700">
-                  Leads are available on Pro and Business plans. Your current plan
-                  is <strong>{getPlanLabel(plan)}</strong>.
+                  Your 7-day free trial for lead capture has ended. Upgrade to
+                  Pro or Business to continue collecting and viewing leads. Your
+                  current plan is <strong>{getPlanLabel(plan)}</strong>.
                 </p>
+                <a
+                  href="/plans"
+                  className="mt-4 inline-flex rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                >
+                  View Plans
+                </a>
               </div>
             ) : leads.length === 0 ? (
               <p className="text-gray-600">No leads yet.</p>

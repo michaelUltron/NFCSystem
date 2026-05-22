@@ -15,7 +15,7 @@ import sabiLogo from "../assets/sabi-logo.png";
 import {
   getMySubscription,
   canUseAnalytics,
-  canUseLeads,
+  getTrialFeatureAccess,
 } from "../lib/subscription-service";
 import { checkIsAdmin } from "../lib/admin-service";
 import { supabase } from "../lib/supabase";
@@ -46,6 +46,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [plan, setPlan] = useState("free");
+  const [leadAccess, setLeadAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBusinessOwner, setIsBusinessOwner] = useState(false);
   const [canManageBilling, setCanManageBilling] = useState(true);
@@ -65,6 +66,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         if (!user) {
           setIsAuthenticated(false);
           setPlan("free");
+          setLeadAccess(false);
           setIsAdmin(false);
           setIsBusinessOwner(false);
           setCanManageBilling(true);
@@ -84,6 +86,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         if (!mounted) return;
 
         setPlan(subscription?.plan || "free");
+        setLeadAccess(getTrialFeatureAccess(subscription).canUseLeads);
         setIsAdmin(Boolean(admin));
         setIsBusinessOwner(Boolean(accountStatus?.is_business_owner));
         setCanManageBilling(
@@ -96,6 +99,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         if (!mounted) return;
         setIsAuthenticated(false);
         setPlan("free");
+        setLeadAccess(false);
         setIsAdmin(false);
         setIsBusinessOwner(false);
         setCanManageBilling(true);
@@ -143,7 +147,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         label: "Leads",
         href: "/leads",
         icon: Users,
-        visible: canUseLeads(plan),
+        visible: leadAccess,
       },
       {
         label: "Analytics",
@@ -226,7 +230,14 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         visible: accountItems.some((item) => item.visible),
       },
     ];
-  }, [plan, isAdmin, isBusinessOwner, managedByOrganization, canManageBilling]);
+  }, [
+    plan,
+    leadAccess,
+    isAdmin,
+    isBusinessOwner,
+    managedByOrganization,
+    canManageBilling,
+  ]);
 
   if (!authChecked || !isAuthenticated) {
     return null;

@@ -10,6 +10,19 @@ export type SubscriptionRow = {
   created_at: string | null;
 };
 
+export type TrialFeatureAccess = {
+  plan: string;
+  trialActive: boolean;
+  trialEnded: boolean;
+  trialEndsAt: string | null;
+  trialDaysRemaining: number;
+  canUseLeads: boolean;
+  canUseThemes: boolean;
+  canUseBranding: boolean;
+};
+
+export const FREE_FEATURE_TRIAL_DAYS = 7;
+
 export async function getMySubscription() {
   const { data, error } = await supabase.rpc("get_my_subscription");
 
@@ -30,8 +43,66 @@ export async function changeMySubscriptionPlan(
   return data;
 }
 
+export async function getPublicProfileFeatureAccess(userId: string) {
+  const response = await fetch(
+    `/api/profiles/access?userId=${encodeURIComponent(userId)}`
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error || "Unable to load feature access.");
+  }
+
+  return (await response.json()) as TrialFeatureAccess;
+}
+
 export function isProLikePlan(plan?: string | null) {
   return plan === "pro" || plan === "business";
+}
+
+function getTrialStart(subscription?: SubscriptionRow | null) {
+  return (
+    subscription?.current_period_start ||
+    subscription?.created_at ||
+    null
+  );
+}
+
+export function getFreeTrialEndsAt(subscription?: SubscriptionRow | null) {
+  const trialStart = getTrialStart(subscription);
+  if (!trialStart) return null;
+
+  const date = new Date(trialStart);
+  if (Number.isNaN(date.getTime())) return null;
+
+  date.setDate(date.getDate() + FREE_FEATURE_TRIAL_DAYS);
+  return date.toISOString();
+}
+
+export function getTrialFeatureAccess(
+  subscription?: SubscriptionRow | null
+): TrialFeatureAccess {
+  const plan = subscription?.plan || "free";
+  const paidAccess = isProLikePlan(plan);
+  const trialEndsAt = paidAccess ? null : getFreeTrialEndsAt(subscription);
+  const trialEndsTime = trialEndsAt ? new Date(trialEndsAt).getTime() : 0;
+  const trialActive = !paidAccess && trialEndsTime > Date.now();
+  const trialEnded = !paidAccess && !!trialEndsAt && !trialActive;
+  const trialDaysRemaining = trialActive
+    ? Math.max(1, Math.ceil((trialEndsTime - Date.now()) / 86_400_000))
+    : 0;
+  const featureAccess = paidAccess || trialActive;
+
+  return {
+    plan,
+    trialActive,
+    trialEnded,
+    trialEndsAt,
+    trialDaysRemaining,
+    canUseLeads: featureAccess,
+    canUseThemes: featureAccess,
+    canUseBranding: featureAccess,
+  };
 }
 
 export function canUseLeads(plan?: string | null) {

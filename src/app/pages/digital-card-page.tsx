@@ -44,7 +44,11 @@ import {
   logProfileViewForProfile,
   logQrView,
 } from "../lib/analytics-service";
-import { canUseLeads } from "../lib/subscription-service";
+import {
+  canUseLeads,
+  getPublicProfileFeatureAccess,
+  type TrialFeatureAccess,
+} from "../lib/subscription-service";
 import { supabase } from "../lib/supabase";
 import { buildPublicCardUrl } from "../lib/app-config";
 import { getPendingCardUid } from "../lib/card-session";
@@ -255,6 +259,9 @@ export function DigitalCardPage() {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
   const [ownerPlan, setOwnerPlan] = useState("free");
+  const [ownerAccess, setOwnerAccess] = useState<TrialFeatureAccess | null>(
+    null
+  );
   const [cardUid, setCardUid] = useState<string | null>(null);
 
   const [leadName, setLeadName] = useState("");
@@ -290,13 +297,15 @@ export function DigitalCardPage() {
         setCardUid(resolvedUid);
         setLoading(false);
 
-        const [linksResult, brandingResult, planResult] = await Promise.allSettled([
-          getPublicSocialLinksByUserId(publicProfile.id),
-          getPublicProfileBrandingByUserId(publicProfile.id),
-          supabase.rpc("get_public_user_plan", {
-            p_user_id: publicProfile.id,
-          }),
-        ]);
+        const [linksResult, brandingResult, planResult, accessResult] =
+          await Promise.allSettled([
+            getPublicSocialLinksByUserId(publicProfile.id),
+            getPublicProfileBrandingByUserId(publicProfile.id),
+            supabase.rpc("get_public_user_plan", {
+              p_user_id: publicProfile.id,
+            }),
+            getPublicProfileFeatureAccess(publicProfile.id),
+          ]);
 
         if (cancelled) return;
 
@@ -314,6 +323,11 @@ export function DigitalCardPage() {
           planResult.value.data
         ) {
           setOwnerPlan(planResult.value.data);
+        }
+
+        if (accessResult.status === "fulfilled") {
+          setOwnerAccess(accessResult.value);
+          setOwnerPlan(accessResult.value.plan);
         }
       } catch (err: any) {
         if (cancelled) return;
@@ -347,9 +361,19 @@ export function DigitalCardPage() {
     run();
   }, [cardUid, profile]);
 
+  const effectiveTheme =
+    ownerAccess && !ownerAccess.canUseThemes ? "default" : profile?.theme;
+  const effectiveCoverUrl =
+    ownerAccess && !ownerAccess.canUseBranding
+      ? ""
+      : profile?.cover_photo_url || "";
+  const leadCaptureAllowed = ownerAccess
+    ? ownerAccess.canUseLeads
+    : canUseLeads(ownerPlan);
+
   const themeClasses = useMemo(
-    () => getThemeClasses(profile?.theme),
-    [profile?.theme]
+    () => getThemeClasses(effectiveTheme),
+    [effectiveTheme]
   );
 
   const initials = useMemo(() => {
@@ -396,7 +420,7 @@ export function DigitalCardPage() {
   }, [profile?.location_url]);
 
   const brandHeaderStyle = useMemo(() => {
-    if (profile?.cover_photo_url) {
+    if (effectiveCoverUrl) {
       return undefined;
     }
 
@@ -416,9 +440,9 @@ export function DigitalCardPage() {
     }
 
     return undefined;
-  }, [organizationBranding, profile?.cover_photo_url]);
+  }, [organizationBranding, effectiveCoverUrl]);
 
-  const isSignatureDesign = profile?.theme === "signature";
+  const isSignatureDesign = effectiveTheme === "signature";
 
   const handleSaveContact = async () => {
     if (!profile) return;
@@ -494,6 +518,11 @@ export function DigitalCardPage() {
 
     setLeadError("");
     setLeadSuccess("");
+
+    if (!leadCaptureAllowed) {
+      setLeadError("Lead capture is not available for this card.");
+      return;
+    }
 
     if (!leadName.trim() || !leadEmail.trim()) {
       setLeadError("Name and email are required.");
@@ -587,10 +616,10 @@ export function DigitalCardPage() {
             }
             style={!isSignatureDesign ? brandHeaderStyle : undefined}
           >
-            {profile.cover_photo_url ? (
+            {effectiveCoverUrl ? (
               <>
                 <ImageWithFallback
-                  src={profile.cover_photo_url}
+                  src={effectiveCoverUrl}
                   alt={`${profile.full_name || "Profile"} cover photo`}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
@@ -881,7 +910,7 @@ export function DigitalCardPage() {
               </div>
             ) : null}
 
-            {canUseLeads(ownerPlan) ? (
+            {leadCaptureAllowed ? (
               <div
                 className={
                   isSignatureDesign
@@ -971,7 +1000,9 @@ export function DigitalCardPage() {
                 }
               >
                 <p className={`text-sm ${themeClasses.mutedText}`}>
-                  Lead capture is available on Pro and Business plans.
+                  {ownerAccess?.trialEnded
+                    ? "This card owner's 7-day free trial for lead capture has ended."
+                    : "Lead capture is available during the Free trial and on Pro or Business plans."}
                 </p>
               </div>
             )}

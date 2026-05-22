@@ -41,6 +41,11 @@ import {
 } from "../lib/profile-service";
 import { supabase } from "../lib/supabase";
 import { uploadProfileImage } from "../lib/storage-service";
+import {
+  getMySubscription,
+  getTrialFeatureAccess,
+  type TrialFeatureAccess,
+} from "../lib/subscription-service";
 
 const socialPlatforms = [
   {
@@ -226,6 +231,7 @@ export function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [access, setAccess] = useState<TrialFeatureAccess | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTourTarget, setActiveTourTarget] = useState("");
@@ -280,10 +286,13 @@ export function ProfilePage() {
           return;
         }
 
-        const [profile, links] = await Promise.all([
+        const [profile, links, subscription] = await Promise.all([
           getMyProfile(),
           getMySocialLinks(),
+          getMySubscription(),
         ]);
+
+        setAccess(getTrialFeatureAccess(subscription));
 
         if (profile) {
           setForm({
@@ -365,9 +374,11 @@ export function ProfilePage() {
 
   const previewUrl = form.username ? `/card/${form.username}` : "";
   const cleanUsername = form.username.trim().toLowerCase();
-  const previewTheme = getPreviewThemeClasses(form.theme);
+  const previewThemeValue = access?.canUseThemes ? form.theme : "default";
+  const previewCoverUrl = access?.canUseBranding ? form.cover_photo_url : "";
+  const previewTheme = getPreviewThemeClasses(previewThemeValue);
   const previewIsEditorial =
-    form.theme === "signature" || form.theme === "executive";
+    previewThemeValue === "signature" || previewThemeValue === "executive";
   const onboardingItems = [
     {
       label: "Upload a clear profile photo",
@@ -467,6 +478,12 @@ export function ProfilePage() {
       setError("");
       setSuccess("");
 
+      if (!access?.canUseBranding) {
+        throw new Error(
+          "Your free trial for better personal branding tools has ended. Upgrade to Pro or Business to upload a cover photo."
+        );
+      }
+
       if (!file.type.startsWith("image/")) {
         throw new Error("Please upload a valid image file.");
       }
@@ -507,7 +524,7 @@ export function ProfilePage() {
         );
       }
 
-      await updateMyProfile({
+      const profilePayload = {
         username,
         full_name: form.full_name.trim(),
         company: form.company.trim(),
@@ -519,8 +536,13 @@ export function ProfilePage() {
         location_url: form.location_url.trim(),
         bio: form.bio.trim(),
         avatar_url: form.avatar_url.trim(),
-        cover_photo_url: form.cover_photo_url.trim(),
-      });
+      };
+
+      await updateMyProfile(
+        access?.canUseBranding
+          ? { ...profilePayload, cover_photo_url: form.cover_photo_url.trim() }
+          : profilePayload
+      );
 
       await replaceMySocialLinks(
         Object.entries(socials).map(([platform, url]) => ({ platform, url }))
@@ -932,6 +954,31 @@ export function ProfilePage() {
             ) : null}
           </div>
 
+          {!loading && access?.trialActive ? (
+            <div className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-800">
+              Your Free plan trial includes cover photos and premium branding
+              tools for <strong>{access.trialDaysRemaining}</strong>{" "}
+              {access.trialDaysRemaining === 1 ? "day" : "days"}.
+            </div>
+          ) : null}
+
+          {!loading && access?.trialEnded ? (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <p className="font-semibold">Free trial ended</p>
+              <p>
+                Your 7-day free trial for better personal branding tools has
+                ended. Cover photos and premium themes are locked until you
+                upgrade to Pro or Business.
+              </p>
+              <Link
+                to="/plans"
+                className="mt-3 inline-flex rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+              >
+                View Plans
+              </Link>
+            </div>
+          ) : null}
+
           {loading ? (
             <div className="bg-white rounded-xl shadow-md p-8 flex items-center gap-3">
               <LoaderCircle className="w-5 h-5 animate-spin" />
@@ -1112,7 +1159,7 @@ export function ProfilePage() {
                         <button
                           type="button"
                           onClick={() => coverInputRef.current?.click()}
-                          disabled={uploadingCover}
+                          disabled={uploadingCover || !access?.canUseBranding}
                           className="inline-flex items-center gap-2 border rounded-lg px-4 py-2 hover:bg-white disabled:opacity-60"
                         >
                           <Upload className="w-4 h-4" />
@@ -1128,10 +1175,19 @@ export function ProfilePage() {
                                 cover_photo_url: "",
                               }))
                             }
-                            className="ml-3 inline-flex items-center gap-2 border rounded-lg px-4 py-2 hover:bg-white"
+                            disabled={!access?.canUseBranding}
+                            className="ml-3 inline-flex items-center gap-2 border rounded-lg px-4 py-2 hover:bg-white disabled:opacity-60"
                           >
                             Remove
                           </button>
+                        ) : null}
+
+                        {!access?.canUseBranding ? (
+                          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                            Your 7-day free trial for cover photos and better
+                            personal branding tools has ended. Upgrade to Pro or
+                            Business to change this section.
+                          </div>
                         ) : null}
 
                         <p className="text-xs text-gray-500 mt-2">
@@ -1577,10 +1633,10 @@ export function ProfilePage() {
                         previewIsEditorial ? "h-28" : "h-20"
                       } ${previewTheme.header}`}
                     >
-                      {form.cover_photo_url ? (
+                      {previewCoverUrl ? (
                         <>
                           <ImageWithFallback
-                            src={form.cover_photo_url}
+                            src={previewCoverUrl}
                             alt="Cover preview"
                             className="absolute inset-0 h-full w-full object-cover"
                           />

@@ -10,8 +10,9 @@ import {
 } from "../lib/settings-service";
 import {
   getMySubscription,
-  canUseThemes,
+  getTrialFeatureAccess,
   getPlanLabel,
+  type TrialFeatureAccess,
 } from "../lib/subscription-service";
 import {
   KeyRound,
@@ -45,6 +46,7 @@ export function SettingsPage() {
   const [username, setUsername] = useState("");
   const [theme, setTheme] = useState("default");
   const [plan, setPlan] = useState("free");
+  const [access, setAccess] = useState<TrialFeatureAccess | null>(null);
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -61,12 +63,14 @@ export function SettingsPage() {
       try {
         const result = await getCurrentAccountSettings();
         const subscription = await getMySubscription();
+        const currentAccess = getTrialFeatureAccess(subscription);
 
         setEmail(result.profile.email || result.user.email || "");
         setFullName(result.profile.full_name || "");
         setUsername(result.profile.username || "");
         setTheme(result.profile.theme || "default");
         setPlan(subscription?.plan || "free");
+        setAccess(currentAccess);
       } catch (err: any) {
         setError(err.message || "Failed to load settings.");
       } finally {
@@ -83,9 +87,9 @@ export function SettingsPage() {
       setError("");
       setSuccess("");
 
-      if (!canUseThemes(plan)) {
+      if (!access?.canUseThemes) {
         throw new Error(
-          "Theme customization is available on Pro and Business plans."
+          "Your free trial for theme customization has ended. Upgrade to Pro or Business to keep using themes."
         );
       }
 
@@ -169,6 +173,15 @@ export function SettingsPage() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
+                {access?.trialActive ? (
+                  <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-800">
+                    Theme customization and personal branding tools are free for{" "}
+                    <strong>{access.trialDaysRemaining}</strong>{" "}
+                    {access.trialDaysRemaining === 1 ? "day" : "days"} on your
+                    current trial.
+                  </div>
+                ) : null}
+
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <User className="w-5 h-5 text-indigo-600" />
@@ -228,7 +241,7 @@ export function SettingsPage() {
                       value={theme}
                       onChange={(e) => setTheme(e.target.value)}
                       className="border rounded-lg px-3 py-2 w-full"
-                      disabled={!canUseThemes(plan)}
+                      disabled={!access?.canUseThemes}
                     >
                       {themeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -237,17 +250,29 @@ export function SettingsPage() {
                       ))}
                     </select>
 
-                    {!canUseThemes(plan) ? (
-                      <p className="text-sm text-amber-600 mt-2">
-                        Theme customization is available on Pro and Business
-                        plans.
-                      </p>
+                    {!access?.canUseThemes ? (
+                      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                        <p className="font-semibold text-amber-800">
+                          Free trial ended
+                        </p>
+                        <p>
+                          Your 7-day free trial for theme customization and
+                          better personal branding tools has ended. Upgrade to
+                          Pro or Business to change your public card theme.
+                        </p>
+                        <a
+                          href="/plans"
+                          className="mt-3 inline-flex rounded-lg bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-700"
+                        >
+                          View Plans
+                        </a>
+                      </div>
                     ) : null}
 
                     <button
                       type="button"
                       onClick={handleSaveTheme}
-                      disabled={savingTheme || !canUseThemes(plan)}
+                      disabled={savingTheme || !access?.canUseThemes}
                       className="mt-4 inline-flex items-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60"
                     >
                       <Save className="w-4 h-4" />

@@ -31,9 +31,10 @@ import { getMyLeadCount } from "../lib/lead-service";
 import {
   getMySubscription,
   canUseAnalytics,
-  canUseLeads,
+  getTrialFeatureAccess,
   getPlanCardLimit,
   getPlanLabel,
+  type TrialFeatureAccess,
 } from "../lib/subscription-service";
 
 export function DashboardPage() {
@@ -47,6 +48,7 @@ export function DashboardPage() {
   const [totalTaps, setTotalTaps] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
   const [plan, setPlan] = useState("free");
+  const [access, setAccess] = useState<TrialFeatureAccess | null>(null);
 
   const loadDashboard = async () => {
     const {
@@ -72,6 +74,7 @@ export function DashboardPage() {
     setTotalTaps(tapCount);
     setTotalLeads(leadCount);
     setPlan(subscription?.plan || "free");
+    setAccess(getTrialFeatureAccess(subscription));
   };
 
   useEffect(() => {
@@ -211,20 +214,43 @@ export function DashboardPage() {
                 />
                 <DashboardCard
                   title="Leads Captured"
-                  value={canUseLeads(plan) ? String(totalLeads) : "—"}
+                  value={access?.canUseLeads ? String(totalLeads) : "—"}
                   icon={Users}
                   trend={
-                    canUseLeads(plan)
+                    access?.canUseLeads
                       ? totalLeads > 0
                         ? "New contacts collected"
                         : "No leads yet"
                       : "Upgrade for lead capture"
                   }
-                  trendUp={canUseLeads(plan) && totalLeads > 0}
+                  trendUp={!!access?.canUseLeads && totalLeads > 0}
                 />
               </div>
 
-              {plan === "free" ? (
+              {access?.trialActive ? (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-8">
+                  <p className="text-sm text-indigo-800">
+                    Your Free plan trial includes lead capture, theme
+                    customization, and personal branding tools for{" "}
+                    <strong>{access.trialDaysRemaining}</strong>{" "}
+                    {access.trialDaysRemaining === 1 ? "day" : "days"}.
+                  </p>
+                </div>
+              ) : access?.trialEnded ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8">
+                  <p className="text-sm text-amber-800">
+                    Your 7-day free trial for lead capture, theme customization,
+                    and better personal branding tools has ended. Upgrade to Pro
+                    or Business to unlock them again.
+                  </p>
+                  <Link
+                    to="/plans"
+                    className="mt-3 inline-flex rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                  >
+                    View Plans
+                  </Link>
+                </div>
+              ) : plan === "free" ? (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8">
                   <p className="text-sm text-amber-800">
                     You are on the Free plan. Free includes 1 active card only.
@@ -420,7 +446,7 @@ export function DashboardPage() {
                   </p>
                   <p>
                     <strong>Total Leads:</strong>{" "}
-                    {canUseLeads(plan) ? totalLeads : "Upgrade required"}
+                    {access?.canUseLeads ? totalLeads : "Upgrade required"}
                   </p>
                 </div>
               </div>
