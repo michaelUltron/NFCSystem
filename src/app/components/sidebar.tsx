@@ -9,6 +9,7 @@ import {
   CreditCard,
   Package,
   Building2,
+  HelpCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import sabiLogo from "../assets/sabi-logo.png";
@@ -204,6 +205,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         label: "Settings",
         href: "/settings",
         icon: Settings,
+        visible: true,
+      },
+      {
+        label: "Help",
+        href: "/help",
+        icon: HelpCircle,
         visible: true,
       },
     ];

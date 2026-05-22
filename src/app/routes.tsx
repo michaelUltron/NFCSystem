@@ -19,6 +19,7 @@ import { BusinessPage } from "./pages/business-page";
 import { BusinessCardsPage } from "./pages/business-cards-page";
 import { OrganizationInvitesPage } from "./pages/organization-invites-page";
 import { BusinessLeadsAnalyticsPage } from "./pages/business-leads-analytics-page";
+import { HelpPage } from "./pages/help-page";
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
   {
     path: "/settings",
     Component: SettingsPage,
+  },
+  {
+    path: "/help",
+    Component: HelpPage,
   },
   {
     path: "/admin",
