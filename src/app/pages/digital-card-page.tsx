@@ -57,6 +57,58 @@ const socialIcons: Record<string, any> = {
   whatsapp: FaWhatsapp,
 };
 
+function escapeVCardValue(value?: string | null) {
+  return (value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function foldVCardLine(line: string) {
+  const limit = 75;
+  const folded = [];
+
+  for (let index = 0; index < line.length; index += limit) {
+    folded.push(`${index === 0 ? "" : " "}${line.slice(index, index + limit)}`);
+  }
+
+  return folded.join("\r\n");
+}
+
+async function buildPhotoLine(avatarUrl?: string | null) {
+  if (!avatarUrl) return "";
+
+  try {
+    const response = await fetch(avatarUrl, {
+      mode: "cors",
+    });
+
+    if (!response.ok) return "";
+
+    const blob = await response.blob();
+
+    if (!blob.type.startsWith("image/")) return "";
+
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = String(reader.result || "");
+        resolve(result.split(",")[1] || "");
+      };
+      reader.onerror = () => reject(new Error("Unable to read image."));
+      reader.readAsDataURL(blob);
+    });
+
+    if (!base64) return "";
+
+    const imageType = blob.type.includes("png") ? "PNG" : "JPEG";
+    return foldVCardLine(`PHOTO;ENCODING=b;TYPE=${imageType}:${base64}`);
+  } catch {
+    return "";
+  }
+}
+
 function getThemeClasses(theme?: string | null) {
   switch (theme) {
     case "minimal":
@@ -298,20 +350,26 @@ export function DigitalCardPage() {
     return undefined;
   }, [organizationBranding]);
 
-  const handleSaveContact = () => {
+  const handleSaveContact = async () => {
     if (!profile) return;
 
-    const vcard = `BEGIN:VCARD
-VERSION:3.0
-FN:${profile.full_name ?? ""}
-ORG:${displayCompany}
-TITLE:${profile.position ?? ""}
-TEL:${profile.phone ?? ""}
-EMAIL:${profile.email ?? ""}
-URL:${profile.website ?? ""}
-ADR;TYPE=WORK:;;${profile.location_label ?? ""};;;;
-NOTE:${profile.bio ?? ""}
-END:VCARD`;
+    const photoLine = await buildPhotoLine(profile.avatar_url);
+    const vcardLines = [
+      "BEGIN:VCARD",
+      "VERSION:3.0",
+      `FN:${escapeVCardValue(profile.full_name)}`,
+      `ORG:${escapeVCardValue(displayCompany)}`,
+      `TITLE:${escapeVCardValue(profile.position)}`,
+      `TEL:${escapeVCardValue(profile.phone)}`,
+      `EMAIL:${escapeVCardValue(profile.email)}`,
+      `URL:${escapeVCardValue(profile.website)}`,
+      `ADR;TYPE=WORK:;;${escapeVCardValue(profile.location_label)};;;;`,
+      `NOTE:${escapeVCardValue(profile.bio)}`,
+      photoLine,
+      "END:VCARD",
+    ].filter(Boolean);
+
+    const vcard = `${vcardLines.join("\r\n")}\r\n`;
 
     const blob = new Blob([vcard], { type: "text/vcard" });
     const url = window.URL.createObjectURL(blob);
