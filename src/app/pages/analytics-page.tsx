@@ -4,8 +4,9 @@ import { TopNavbar } from "../components/top-navbar";
 import { getMyTapHistory } from "../lib/analytics-service";
 import {
   getMySubscription,
-  canUseAnalytics,
+  getTrialFeatureAccess,
   getPlanLabel,
+  type TrialFeatureAccess,
 } from "../lib/subscription-service";
 import { markTapsSeen } from "../lib/notification-state";
 
@@ -15,6 +16,7 @@ export function AnalyticsPage() {
   const [taps, setTaps] = useState<any[]>([]);
   const [plan, setPlan] = useState("free");
   const [allowed, setAllowed] = useState(false);
+  const [access, setAccess] = useState<TrialFeatureAccess | null>(null);
 
   useEffect(() => {
     markTapsSeen();
@@ -23,10 +25,12 @@ export function AnalyticsPage() {
       try {
         const subscription = await getMySubscription();
         const currentPlan = subscription?.plan || "free";
+        const currentAccess = getTrialFeatureAccess(subscription);
 
         setPlan(currentPlan);
+        setAccess(currentAccess);
 
-        if (!canUseAnalytics(currentPlan)) {
+        if (!currentAccess.canUseAnalytics) {
           setAllowed(false);
           return;
         }
@@ -76,13 +80,25 @@ export function AnalyticsPage() {
                   Upgrade required
                 </h2>
                 <p className="text-sm text-amber-700">
-                  Analytics are available on Pro and Business plans. Your current
-                  plan is <strong>{getPlanLabel(plan)}</strong>.
+                  {access?.trialEnded
+                    ? "Your 7-day free trial for analytics has ended. Upgrade to Pro or Business to unlock it again."
+                    : "Analytics are available during the Free trial and on Pro or Business plans."}{" "}
+                  Your current plan is <strong>{getPlanLabel(plan)}</strong>.
                 </p>
               </div>
             </div>
           ) : (
             <>
+              {!loading && access?.trialActive ? (
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 mb-8">
+                  <p className="text-sm text-indigo-800">
+                    Your Free plan analytics trial is active for{" "}
+                    <strong>{access.trialDaysRemaining}</strong>{" "}
+                    {access.trialDaysRemaining === 1 ? "day" : "days"}.
+                  </p>
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <h2 className="text-lg font-semibold mb-2">Total Taps</h2>

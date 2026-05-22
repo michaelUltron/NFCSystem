@@ -30,7 +30,6 @@ import { getMyTapCount } from "../lib/analytics-service";
 import { getMyLeadCount } from "../lib/lead-service";
 import {
   getMySubscription,
-  canUseAnalytics,
   getTrialFeatureAccess,
   getPlanCardLimit,
   getPlanLabel,
@@ -84,7 +83,7 @@ export function DashboardPage() {
     setAccess(currentAccess);
 
     Promise.all([
-      canUseAnalytics(currentPlan) ? getMyTapCount().catch(() => 0) : 0,
+      currentAccess.canUseAnalytics ? getMyTapCount().catch(() => 0) : 0,
       currentAccess.canUseLeads ? getMyLeadCount().catch(() => 0) : 0,
     ]).then(([tapCount, leadCount]) => {
       setTotalTaps(tapCount);
@@ -220,14 +219,14 @@ export function DashboardPage() {
                 />
                 <DashboardCard
                   title="Total Taps"
-                  value={canUseAnalytics(plan) ? String(totalTaps) : "—"}
+                  value={access?.canUseAnalytics ? String(totalTaps) : "—"}
                   icon={MousePointerClick}
                   trend={
-                    canUseAnalytics(plan)
+                    access?.canUseAnalytics
                       ? "Card opens tracked"
                       : "Upgrade for analytics"
                   }
-                  trendUp={canUseAnalytics(plan)}
+                  trendUp={!!access?.canUseAnalytics}
                 />
                 <DashboardCard
                   title="Leads Captured"
@@ -247,8 +246,8 @@ export function DashboardPage() {
               {access?.trialActive ? (
                 <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-8">
                   <p className="text-sm text-indigo-800">
-                    Your Free plan trial includes lead capture, theme
-                    customization, and personal branding tools for{" "}
+                    Your Free plan trial includes lead capture, analytics,
+                    theme customization, and personal branding tools for{" "}
                     <strong>{access.trialDaysRemaining}</strong>{" "}
                     {access.trialDaysRemaining === 1 ? "day" : "days"}.
                   </p>
@@ -256,9 +255,9 @@ export function DashboardPage() {
               ) : access?.trialEnded ? (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8">
                   <p className="text-sm text-amber-800">
-                    Your 7-day free trial for lead capture, theme customization,
-                    and better personal branding tools has ended. Upgrade to Pro
-                    or Business to unlock them again.
+                    Your 7-day free trial for lead capture, analytics, theme
+                    customization, and better personal branding tools has ended.
+                    Upgrade to Pro or Business to unlock them again.
                   </p>
                   <Link
                     to="/plans"
@@ -459,7 +458,7 @@ export function DashboardPage() {
                   </p>
                   <p>
                     <strong>Total Taps:</strong>{" "}
-                    {canUseAnalytics(plan) ? totalTaps : "Upgrade required"}
+                    {access?.canUseAnalytics ? totalTaps : "Upgrade required"}
                   </p>
                   <p>
                     <strong>Total Leads:</strong>{" "}

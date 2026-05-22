@@ -76,9 +76,9 @@ export function PlansPage() {
         features: [
           "1 active card",
           "Basic public card",
-          "No analytics",
-          "No lead capture",
-          "No theme customization",
+          "7-day analytics trial",
+          "7-day lead capture trial",
+          "7-day theme customization trial",
         ],
         isActive: settingsMap.get("free")?.is_active ?? true,
       },

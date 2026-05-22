@@ -17,6 +17,7 @@ export type TrialFeatureAccess = {
   trialEndsAt: string | null;
   trialDaysRemaining: number;
   canUseLeads: boolean;
+  canUseAnalytics: boolean;
   canUseThemes: boolean;
   canUseBranding: boolean;
 };
@@ -100,6 +101,7 @@ export function getTrialFeatureAccess(
     trialEndsAt,
     trialDaysRemaining,
     canUseLeads: featureAccess,
+    canUseAnalytics: featureAccess,
     canUseThemes: featureAccess,
     canUseBranding: featureAccess,
   };

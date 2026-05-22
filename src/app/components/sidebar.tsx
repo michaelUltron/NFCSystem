@@ -15,7 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 import sabiLogo from "../assets/sabi-logo.png";
 import {
   getMySubscription,
-  canUseAnalytics,
   getTrialFeatureAccess,
 } from "../lib/subscription-service";
 import { checkIsAdmin } from "../lib/admin-service";
@@ -48,6 +47,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const [plan, setPlan] = useState("free");
   const [leadAccess, setLeadAccess] = useState(false);
+  const [analyticsAccess, setAnalyticsAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBusinessOwner, setIsBusinessOwner] = useState(false);
   const [canManageBilling, setCanManageBilling] = useState(true);
@@ -68,6 +68,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           setIsAuthenticated(false);
           setPlan("free");
           setLeadAccess(false);
+          setAnalyticsAccess(false);
           setIsAdmin(false);
           setIsBusinessOwner(false);
           setCanManageBilling(true);
@@ -87,7 +88,9 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         if (!mounted) return;
 
         setPlan(subscription?.plan || "free");
-        setLeadAccess(getTrialFeatureAccess(subscription).canUseLeads);
+        const access = getTrialFeatureAccess(subscription);
+        setLeadAccess(access.canUseLeads);
+        setAnalyticsAccess(access.canUseAnalytics);
         setIsAdmin(Boolean(admin));
         setIsBusinessOwner(Boolean(accountStatus?.is_business_owner));
         setCanManageBilling(
@@ -101,6 +104,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         setIsAuthenticated(false);
         setPlan("free");
         setLeadAccess(false);
+        setAnalyticsAccess(false);
         setIsAdmin(false);
         setIsBusinessOwner(false);
         setCanManageBilling(true);
@@ -154,7 +158,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         label: "Analytics",
         href: "/analytics",
         icon: BarChart3,
-        visible: canUseAnalytics(plan),
+        visible: analyticsAccess,
       },
     ];
 
@@ -240,6 +244,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   }, [
     plan,
     leadAccess,
+    analyticsAccess,
     isAdmin,
     isBusinessOwner,
     managedByOrganization,

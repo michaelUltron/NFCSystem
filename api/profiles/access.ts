@@ -70,6 +70,7 @@ function buildAccess(subscription: SubscriptionRow | null, profile: ProfileRow |
     trialEndsAt,
     trialDaysRemaining,
     canUseLeads: featureAccess,
+    canUseAnalytics: featureAccess,
     canUseThemes: featureAccess,
     canUseBranding: featureAccess,
   };
