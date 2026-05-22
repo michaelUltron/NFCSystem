@@ -325,6 +325,8 @@ export function ProfilePage() {
   const [access, setAccess] = useState<TrialFeatureAccess | null>(null);
   const [activatedCardCount, setActivatedCardCount] = useState(0);
   const [error, setError] = useState("");
+  const [uploadError, setUploadError] = useState("");
+  const [uploadErrorKind, setUploadErrorKind] = useState<"avatar" | "cover" | "">("");
   const [success, setSuccess] = useState("");
   const [activeTourTarget, setActiveTourTarget] = useState("");
   const [tourTip, setTourTip] = useState("");
@@ -750,6 +752,8 @@ export function ProfilePage() {
 
     try {
       setError("");
+      setUploadError("");
+      setUploadErrorKind("");
       setSuccess("");
 
       if (!file.type.startsWith("image/")) {
@@ -762,7 +766,10 @@ export function ProfilePage() {
 
       openImageEditor("avatar", file);
     } catch (err: any) {
-      setError(err.message || "Failed to upload image.");
+      const message = err.message || "Failed to upload image.";
+      setUploadError(message);
+      setUploadErrorKind("avatar");
+      setError(message);
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -778,6 +785,8 @@ export function ProfilePage() {
 
     try {
       setError("");
+      setUploadError("");
+      setUploadErrorKind("");
       setSuccess("");
 
       if (!access?.canUseBranding) {
@@ -796,7 +805,10 @@ export function ProfilePage() {
 
       openImageEditor("cover", file);
     } catch (err: any) {
-      setError(err.message || "Failed to upload cover photo.");
+      const message = err.message || "Failed to upload cover photo.";
+      setUploadError(message);
+      setUploadErrorKind("cover");
+      setError(message);
     } finally {
       if (coverInputRef.current) {
         coverInputRef.current.value = "";
@@ -810,6 +822,8 @@ export function ProfilePage() {
     try {
       setApplyingImageEdit(true);
       setError("");
+      setUploadError("");
+      setUploadErrorKind("");
       setSuccess("");
 
       if (imageEditor.kind === "cover" && !access?.canUseBranding) {
@@ -841,7 +855,10 @@ export function ProfilePage() {
       );
       closeImageEditor();
     } catch (err: any) {
-      setError(err.message || "Failed to prepare image.");
+      const message = err.message || "Failed to prepare image.";
+      setUploadError(message);
+      setUploadErrorKind(imageEditor.kind);
+      setError(message);
     } finally {
       setApplyingImageEdit(false);
       setUploadingImage(false);
@@ -852,6 +869,8 @@ export function ProfilePage() {
   const handleSave = async () => {
     setSaving(true);
     setError("");
+    setUploadError("");
+    setUploadErrorKind("");
     setSuccess("");
 
     try {
@@ -1520,6 +1539,12 @@ export function ProfilePage() {
                         <p className="text-xs text-gray-500">
                           Upload JPG, PNG, or WEBP up to 5MB.
                         </p>
+
+                        {uploadError && uploadErrorKind === "avatar" ? (
+                          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                            {uploadError}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -1586,6 +1611,12 @@ export function ProfilePage() {
                         <p className="text-xs text-gray-500 mt-2">
                           Upload a wide JPG, PNG, or WEBP up to 8MB.
                         </p>
+
+                        {uploadError && uploadErrorKind === "cover" ? (
+                          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                            {uploadError}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
