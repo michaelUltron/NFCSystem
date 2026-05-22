@@ -60,21 +60,35 @@ export function DashboardPage() {
       return;
     }
 
-    const [cardData, profileData, tapCount, leadCount, subscription] =
-      await Promise.all([
-        getMyCards(),
-        getCurrentUserProfile(),
-        getMyTapCount(),
-        getMyLeadCount(),
-        getMySubscription(),
-      ]);
+    const [cardData, profileData, subscription] = await Promise.all([
+      getMyCards(),
+      getCurrentUserProfile(),
+      getMySubscription(),
+    ]);
+
+    const needsCardSetup =
+      !profileData?.username || !profileData?.full_name || !profileData?.avatar_url;
+
+    if (needsCardSetup) {
+      navigate("/profile?onboarding=1", { replace: true });
+      return;
+    }
+
+    const currentPlan = subscription?.plan || "free";
+    const currentAccess = getTrialFeatureAccess(subscription);
 
     setCards(cardData);
     setProfile(profileData);
-    setTotalTaps(tapCount);
-    setTotalLeads(leadCount);
-    setPlan(subscription?.plan || "free");
-    setAccess(getTrialFeatureAccess(subscription));
+    setPlan(currentPlan);
+    setAccess(currentAccess);
+
+    Promise.all([
+      canUseAnalytics(currentPlan) ? getMyTapCount().catch(() => 0) : 0,
+      currentAccess.canUseLeads ? getMyLeadCount().catch(() => 0) : 0,
+    ]).then(([tapCount, leadCount]) => {
+      setTotalTaps(tapCount);
+      setTotalLeads(leadCount);
+    });
   };
 
   useEffect(() => {

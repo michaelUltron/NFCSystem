@@ -612,7 +612,9 @@ export function DigitalCardPage() {
             className={
               isSignatureDesign
                 ? "relative h-44 overflow-hidden bg-[#17231f] p-5"
-                : `h-32 ${!brandHeaderStyle ? themeClasses.headerBg : ""}`
+                : `relative h-32 overflow-hidden ${
+                    !brandHeaderStyle ? themeClasses.headerBg : ""
+                  }`
             }
             style={!isSignatureDesign ? brandHeaderStyle : undefined}
           >
