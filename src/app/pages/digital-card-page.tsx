@@ -791,27 +791,48 @@ export function DigitalCardPage() {
                   Get My vCard
                 </button>
 
+                {socials.length > 0 ? (
+                  <div className="mt-5">
+                    <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-[#9b7c6d]">
+                      Connect
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {socials.map((social) => {
+                        const Icon = socialIcons[social.platform];
+                        if (!Icon) return null;
+
+                        const href =
+                          social.platform === "whatsapp" &&
+                          !social.url.startsWith("http")
+                            ? `https://wa.me/${social.url.replace(/\D/g, "")}`
+                            : social.url;
+
+                        return (
+                          <a
+                            key={social.id}
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f8f1ec] text-[#8b5638] hover:bg-[#eadbcc]"
+                            aria-label={social.platform}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="mt-5 grid grid-cols-3 overflow-hidden rounded-b-[1.25rem] bg-[#8b5638] text-xs font-medium text-white">
-                  {linkedinSocial?.url ? (
-                    <a
-                      href={linkedinSocial.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1 py-3 hover:bg-white/10"
-                    >
-                      <FaLinkedin className="h-4 w-4" />
-                      LinkedIn
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowQrModal(true)}
-                      className="flex items-center justify-center gap-1 py-3 hover:bg-white/10"
-                    >
-                      <QrCode className="h-4 w-4" />
-                      QR
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowQrModal(true)}
+                    className="flex items-center justify-center gap-1 py-3 hover:bg-white/10"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    QR
+                  </button>
 
                   {profile.website ? (
                     <a
@@ -824,14 +845,10 @@ export function DigitalCardPage() {
                       Web
                     </a>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowQrModal(true)}
-                      className="flex items-center justify-center gap-1 border-x border-white/20 py-3 hover:bg-white/10"
-                    >
-                      <QrCode className="h-4 w-4" />
-                      QR
-                    </button>
+                    <span className="flex items-center justify-center gap-1 border-x border-white/20 py-3 text-white/55">
+                      <Globe className="h-4 w-4" />
+                      Web
+                    </span>
                   )}
 
                   {profile.email ? (
@@ -843,14 +860,10 @@ export function DigitalCardPage() {
                       Mail
                     </a>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowQrModal(true)}
-                      className="flex items-center justify-center gap-1 py-3 hover:bg-white/10"
-                    >
-                      <QrCode className="h-4 w-4" />
-                      QR
-                    </button>
+                    <span className="flex items-center justify-center gap-1 py-3 text-white/55">
+                      <Mail className="h-4 w-4" />
+                      Mail
+                    </span>
                   )}
                 </div>
 
