@@ -37,6 +37,35 @@ export async function activateCard(cardUid: string) {
   return data as CardRow;
 }
 
+export async function activatePersonalCard(cardUid: string) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) throw sessionError;
+  if (!session?.access_token) throw new Error("You must be logged in.");
+
+  const response = await fetch("/api/cards/activate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      cardUid: cardUid.trim(),
+    }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result?.error || "Activation failed.");
+  }
+
+  return result.card as CardRow;
+}
+
 export async function getMyCards() {
   const { data, error } = await supabase
     .from("cards")

@@ -3,7 +3,11 @@ import { CreditCard, CheckCircle, UserCircle, Building2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { savePendingCardUid, clearPendingCardUid } from "../lib/card-session";
-import { activateCard, getMySubscriptionPlan } from "../lib/card-service";
+import {
+  activateCard,
+  activatePersonalCard,
+  getMySubscriptionPlan,
+} from "../lib/card-service";
 import {
   getCardTapDestination,
   buildCardPublicPath,
@@ -49,6 +53,20 @@ export function ActivationPage() {
                 replace: true,
               });
             }, 800);
+            return;
+          }
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+
+          if (user) {
+            setCurrentUser(user);
+            setCardAlreadyOwned(false);
+            setMessage(
+              "This card is active but is not linked to a public card yet. Confirm to attach it to your account."
+            );
+            setLoading(false);
             return;
           }
 
@@ -122,7 +140,12 @@ export function ActivationPage() {
           : "Activating your card..."
       );
 
-      await activateCard(cardUid);
+      if (isBusinessAccount) {
+        await activateCard(cardUid);
+      } else {
+        await activatePersonalCard(cardUid);
+      }
+
       savePendingCardUid(cardUid);
 
       const updatedInfo = await getCardTapDestination(cardUid);
