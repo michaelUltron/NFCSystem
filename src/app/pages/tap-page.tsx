@@ -25,14 +25,13 @@ export function TapPage() {
         const result = await getCardTapDestination(cardUid);
 
         if (result.status === "active" && result.username) {
-          try {
-            await logCardTap(cardUid);
-          } catch (tapError) {
-            console.error("Tap logging failed:", tapError);
-          }
-
           setMessage("Opening digital card...");
           navigate(`/card/${result.username}`, { replace: true });
+
+          logCardTap(cardUid).catch((tapError) => {
+            console.error("Tap logging failed:", tapError);
+          });
+
           return;
         }
 
