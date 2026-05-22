@@ -88,12 +88,75 @@ type FormState = {
   bio: string;
   avatar_url: string;
   cover_photo_url: string;
+  theme: string;
 };
 
 const DEFAULT_MAP_CENTER = {
   lat: 14.5995,
   lng: 120.9842,
 };
+
+function getPreviewThemeClasses(theme?: string | null) {
+  switch (theme) {
+    case "minimal":
+      return {
+        card: "bg-white text-gray-900",
+        header: "bg-gray-900",
+        avatar: "bg-gray-200 text-gray-800",
+        muted: "text-gray-600",
+      };
+    case "modern":
+      return {
+        card: "bg-white text-gray-900",
+        header: "bg-gradient-to-r from-violet-600 via-fuchsia-600 to-sky-600",
+        avatar: "bg-violet-100 text-violet-700",
+        muted: "text-gray-600",
+      };
+    case "dark":
+      return {
+        card: "bg-slate-900 text-white",
+        header: "bg-gradient-to-r from-slate-700 to-slate-900",
+        avatar: "bg-slate-700 text-white",
+        muted: "text-slate-300",
+      };
+    case "signature":
+      return {
+        card: "bg-[#101815] text-white",
+        header: "bg-[#17231f]",
+        avatar: "bg-[#b9f27c] text-[#101815]",
+        muted: "text-white/70",
+      };
+    case "executive":
+      return {
+        card: "bg-[#171717] text-white",
+        header: "bg-[#d7c39a]",
+        avatar: "bg-[#d7c39a] text-[#171717]",
+        muted: "text-white/68",
+      };
+    case "aurora":
+      return {
+        card: "bg-white text-gray-900",
+        header: "bg-gradient-to-r from-emerald-500 via-sky-500 to-fuchsia-500",
+        avatar: "bg-emerald-100 text-emerald-700",
+        muted: "text-gray-600",
+      };
+    case "sunrise":
+      return {
+        card: "bg-white text-gray-900",
+        header: "bg-gradient-to-r from-rose-500 via-orange-400 to-amber-300",
+        avatar: "bg-rose-100 text-rose-700",
+        muted: "text-gray-600",
+      };
+    case "default":
+    default:
+      return {
+        card: "bg-white text-gray-900",
+        header: "bg-gradient-to-r from-indigo-600 to-blue-600",
+        avatar: "bg-indigo-100 text-indigo-600",
+        muted: "text-gray-600",
+      };
+  }
+}
 
 const DEFAULT_MAP_ZOOM = 15;
 const MIN_MAP_ZOOM = 3;
@@ -194,6 +257,7 @@ export function ProfilePage() {
     bio: "",
     avatar_url: "",
     cover_photo_url: "",
+    theme: "default",
   });
 
   const [socials, setSocials] = useState<Record<string, string>>({
@@ -235,6 +299,7 @@ export function ProfilePage() {
             bio: profile.bio ?? "",
             avatar_url: profile.avatar_url ?? "",
             cover_photo_url: profile.cover_photo_url ?? "",
+            theme: profile.theme ?? "default",
           });
         }
 
@@ -300,6 +365,9 @@ export function ProfilePage() {
 
   const previewUrl = form.username ? `/card/${form.username}` : "";
   const cleanUsername = form.username.trim().toLowerCase();
+  const previewTheme = getPreviewThemeClasses(form.theme);
+  const previewIsEditorial =
+    form.theme === "signature" || form.theme === "executive";
   const onboardingItems = [
     {
       label: "Upload a clear profile photo",
@@ -1497,18 +1565,49 @@ export function ProfilePage() {
 
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <h2 className="text-xl font-semibold mb-4">Public Preview</h2>
-                  <div className="rounded-2xl border overflow-hidden">
-                    <div className="h-20 bg-gradient-to-r from-indigo-600 to-blue-600">
+                  <div
+                    className={`overflow-hidden border shadow-sm ${
+                      previewIsEditorial
+                        ? `rounded-[1.5rem] ${previewTheme.card}`
+                        : `rounded-2xl ${previewTheme.card}`
+                    }`}
+                  >
+                    <div
+                      className={`relative ${
+                        previewIsEditorial ? "h-28" : "h-20"
+                      } ${previewTheme.header}`}
+                    >
                       {form.cover_photo_url ? (
-                        <ImageWithFallback
-                          src={form.cover_photo_url}
-                          alt="Cover preview"
-                          className="h-full w-full object-cover"
-                        />
+                        <>
+                          <ImageWithFallback
+                            src={form.cover_photo_url}
+                            alt="Cover preview"
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                          <div
+                            className={`absolute inset-0 ${
+                              previewIsEditorial
+                                ? "bg-black/45"
+                                : "bg-gradient-to-b from-black/10 to-black/30"
+                            }`}
+                          />
+                        </>
                       ) : null}
                     </div>
-                    <div className="px-4 pb-4 -mt-10">
-                      <div className="w-20 h-20 rounded-full border-4 border-white bg-indigo-100 overflow-hidden mx-auto flex items-center justify-center text-indigo-600 font-semibold text-xl">
+                    <div
+                      className={
+                        previewIsEditorial
+                          ? "px-4 pb-5 -mt-12"
+                          : "px-4 pb-4 -mt-10"
+                      }
+                    >
+                      <div
+                        className={`relative z-10 h-20 w-20 overflow-hidden border-4 flex items-center justify-center font-semibold text-xl ${
+                          previewIsEditorial
+                            ? `rounded-2xl border-[#101815] ${previewTheme.avatar}`
+                            : `mx-auto rounded-full border-white ${previewTheme.avatar}`
+                        }`}
+                      >
                         {form.avatar_url ? (
                           <ImageWithFallback
                             src={form.avatar_url}
@@ -1519,18 +1618,24 @@ export function ProfilePage() {
                           initials
                         )}
                       </div>
-                      <div className="text-center mt-3">
+                      <div
+                        className={previewIsEditorial ? "mt-3 text-left" : "text-center mt-3"}
+                      >
                         <h3 className="font-semibold text-lg">
                           {form.full_name || "Your Name"}
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className={`text-sm ${previewTheme.muted}`}>
                           {form.position || "Your Position"}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className={`text-sm ${previewTheme.muted}`}>
                           {form.company || "Your Company"}
                         </p>
                         {form.location_label ? (
-                          <p className="text-sm text-gray-500 mt-2 flex items-center justify-center gap-1">
+                          <p
+                            className={`text-sm mt-2 flex items-center gap-1 ${
+                              previewIsEditorial ? "justify-start" : "justify-center"
+                            } ${previewTheme.muted}`}
+                          >
                             <MapPin className="w-4 h-4" />
                             {form.location_label}
                           </p>
