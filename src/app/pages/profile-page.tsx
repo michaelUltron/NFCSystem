@@ -568,6 +568,10 @@ export function ProfilePage() {
     setSuccess("");
 
     try {
+      if (uploadingCover) {
+        throw new Error("Please wait for the cover photo upload to finish.");
+      }
+
       const username = cleanUsername;
 
       if (!username) {
@@ -1768,7 +1772,7 @@ export function ProfilePage() {
 
                   <button
                     onClick={handleSave}
-                    disabled={saving || uploadingImage}
+                    disabled={saving || uploadingImage || uploadingCover}
                     className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-4 py-3 disabled:opacity-60"
                   >
                     {saving ? (
@@ -1793,7 +1797,7 @@ export function ProfilePage() {
                   {onboardingMode ? (
                     <button
                       onClick={handleFinishSetup}
-                      disabled={saving || uploadingImage}
+                      disabled={saving || uploadingImage || uploadingCover}
                       className="w-full mt-3 flex items-center justify-center gap-2 bg-gray-900 text-white hover:bg-black rounded-lg px-4 py-3 disabled:opacity-60"
                     >
                       <Eye className="w-5 h-5" />

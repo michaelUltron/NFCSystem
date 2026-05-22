@@ -274,6 +274,10 @@ export function DigitalCardPage() {
   const [leadError, setLeadError] = useState("");
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [username]);
+
+  useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
