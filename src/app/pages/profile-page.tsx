@@ -99,6 +99,20 @@ type FormState = {
   theme: string;
 };
 
+type ImageEditorState = {
+  kind: "avatar" | "cover";
+  file: File;
+  previewUrl: string;
+  zoom: number;
+  x: number;
+  y: number;
+  avatarShape: "circle" | "square";
+};
+
+const AVATAR_CROP_SIZE = 720;
+const COVER_CROP_WIDTH = 1600;
+const COVER_CROP_HEIGHT = 640;
+
 const DEFAULT_MAP_CENTER = {
   lat: 14.5995,
   lng: 120.9842,
@@ -216,6 +230,61 @@ function parseGoogleMapsCoordinates(url: string) {
   };
 }
 
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Unable to load selected image."));
+    image.src = src;
+  });
+}
+
+async function cropImageToFile(editor: ImageEditorState) {
+  const image = await loadImage(editor.previewUrl);
+  const outputWidth =
+    editor.kind === "cover" ? COVER_CROP_WIDTH : AVATAR_CROP_SIZE;
+  const outputHeight =
+    editor.kind === "cover" ? COVER_CROP_HEIGHT : AVATAR_CROP_SIZE;
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("This browser cannot prepare the cropped image.");
+  }
+
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+
+  const scale = Math.max(
+    outputWidth / image.naturalWidth,
+    outputHeight / image.naturalHeight
+  ) * editor.zoom;
+  const drawWidth = image.naturalWidth * scale;
+  const drawHeight = image.naturalHeight * scale;
+  const maxOffsetX = Math.max(0, (drawWidth - outputWidth) / 2);
+  const maxOffsetY = Math.max(0, (drawHeight - outputHeight) / 2);
+  const offsetX = (editor.x / 100) * maxOffsetX;
+  const offsetY = (editor.y / 100) * maxOffsetY;
+  const drawX = (outputWidth - drawWidth) / 2 - offsetX;
+  const drawY = (outputHeight - drawHeight) / 2 - offsetY;
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, outputWidth, outputHeight);
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.9)
+  );
+
+  if (!blob) {
+    throw new Error("Unable to prepare the cropped image.");
+  }
+
+  const baseName = editor.kind === "cover" ? "cover-photo" : "profile-photo";
+  return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+}
+
 export function ProfilePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -260,6 +329,8 @@ export function ProfilePage() {
   const [mapSize, setMapSize] = useState({ width: 640, height: 320 });
   const [draggingPin, setDraggingPin] = useState(false);
   const [draggingMap, setDraggingMap] = useState(false);
+  const [imageEditor, setImageEditor] = useState<ImageEditorState | null>(null);
+  const [applyingImageEdit, setApplyingImageEdit] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     username: "",
@@ -355,8 +426,11 @@ export function ProfilePage() {
       if (highlightTimeoutRef.current) {
         window.clearTimeout(highlightTimeoutRef.current);
       }
+      if (imageEditor?.previewUrl) {
+        URL.revokeObjectURL(imageEditor.previewUrl);
+      }
     };
-  }, []);
+  }, [imageEditor?.previewUrl]);
 
   useEffect(() => {
     if (!locationPickerOpen) return;
@@ -490,6 +564,33 @@ export function ProfilePage() {
   const requiredSetupComplete =
     !!form.avatar_url && !!form.full_name.trim() && !!cleanUsername;
 
+  const openImageEditor = (kind: "avatar" | "cover", file: File) => {
+    setImageEditor((prev) => {
+      if (prev?.previewUrl) {
+        URL.revokeObjectURL(prev.previewUrl);
+      }
+
+      return {
+        kind,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        zoom: 1,
+        x: 0,
+        y: 0,
+        avatarShape: "circle",
+      };
+    });
+  };
+
+  const closeImageEditor = () => {
+    setImageEditor((prev) => {
+      if (prev?.previewUrl) {
+        URL.revokeObjectURL(prev.previewUrl);
+      }
+      return null;
+    });
+  };
+
   const handleImageFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -497,7 +598,6 @@ export function ProfilePage() {
     if (!file) return;
 
     try {
-      setUploadingImage(true);
       setError("");
       setSuccess("");
 
@@ -509,18 +609,10 @@ export function ProfilePage() {
         throw new Error("Image must be 5MB or smaller.");
       }
 
-      const result = await uploadProfileImage(file);
-
-      setForm((prev) => ({
-        ...prev,
-        avatar_url: result.publicUrl,
-      }));
-
-      setSuccess("Profile image uploaded. Click Save Profile to keep it.");
+      openImageEditor("avatar", file);
     } catch (err: any) {
       setError(err.message || "Failed to upload image.");
     } finally {
-      setUploadingImage(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -534,7 +626,6 @@ export function ProfilePage() {
     if (!file) return;
 
     try {
-      setUploadingCover(true);
       setError("");
       setSuccess("");
 
@@ -552,21 +643,58 @@ export function ProfilePage() {
         throw new Error("Cover photo must be 8MB or smaller.");
       }
 
-      const result = await uploadProfileImage(file);
-
-      setForm((prev) => ({
-        ...prev,
-        cover_photo_url: result.publicUrl,
-      }));
-
-      setSuccess("Cover photo uploaded. Click Save Profile to keep it.");
+      openImageEditor("cover", file);
     } catch (err: any) {
       setError(err.message || "Failed to upload cover photo.");
     } finally {
-      setUploadingCover(false);
       if (coverInputRef.current) {
         coverInputRef.current.value = "";
       }
+    }
+  };
+
+  const handleApplyImageEdit = async () => {
+    if (!imageEditor) return;
+
+    try {
+      setApplyingImageEdit(true);
+      setError("");
+      setSuccess("");
+
+      if (imageEditor.kind === "cover" && !access?.canUseBranding) {
+        throw new Error(
+          "Your free trial for better personal branding tools has ended. Upgrade to Pro or Business to upload a cover photo."
+        );
+      }
+
+      if (imageEditor.kind === "avatar") {
+        setUploadingImage(true);
+      } else {
+        setUploadingCover(true);
+      }
+
+      const croppedFile = await cropImageToFile(imageEditor);
+      const result = await uploadProfileImage(croppedFile);
+
+      setForm((prev) => ({
+        ...prev,
+        ...(imageEditor.kind === "avatar"
+          ? { avatar_url: result.publicUrl }
+          : { cover_photo_url: result.publicUrl }),
+      }));
+
+      setSuccess(
+        imageEditor.kind === "avatar"
+          ? "Profile image cropped and uploaded. Click Save Profile to keep it."
+          : "Cover photo cropped and uploaded. Click Save Profile to keep it."
+      );
+      closeImageEditor();
+    } catch (err: any) {
+      setError(err.message || "Failed to prepare image.");
+    } finally {
+      setApplyingImageEdit(false);
+      setUploadingImage(false);
+      setUploadingCover(false);
     }
   };
 
@@ -1956,6 +2084,188 @@ export function ProfilePage() {
         </main>
       </div>
     </div>
+
+    {imageEditor ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
+        <div className="max-h-[92vh] w-full max-w-4xl overflow-auto rounded-xl bg-white shadow-2xl">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-white px-6 py-4">
+            <div>
+              <h2 className="text-xl font-semibold">
+                {imageEditor.kind === "avatar"
+                  ? "Crop Profile Photo"
+                  : "Position Cover Photo"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {imageEditor.kind === "avatar"
+                  ? "Zoom and move the image until your face is centered."
+                  : "Set the focal point so the cover looks good across card themes."}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={closeImageEditor}
+              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              aria-label="Close image editor"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-[1fr_280px]">
+            <div>
+              <div
+                className={`mx-auto overflow-hidden border bg-gray-100 shadow-inner ${
+                  imageEditor.kind === "avatar"
+                    ? imageEditor.avatarShape === "circle"
+                      ? "aspect-square max-w-sm rounded-full"
+                      : "aspect-square max-w-sm rounded-2xl"
+                    : "aspect-[5/2] w-full rounded-xl"
+                }`}
+              >
+                <img
+                  src={imageEditor.previewUrl}
+                  alt="Crop preview"
+                  className="h-full w-full object-cover"
+                  style={{
+                    objectPosition: `${50 + imageEditor.x}% ${
+                      50 + imageEditor.y
+                    }%`,
+                    transform: `scale(${imageEditor.zoom})`,
+                  }}
+                />
+              </div>
+
+              <p className="mt-3 text-center text-xs text-gray-500">
+                Previewing {imageEditor.file.name}
+              </p>
+            </div>
+
+            <div className="space-y-5">
+              {imageEditor.kind === "avatar" ? (
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Preview Shape
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["circle", "square"] as const).map((shape) => (
+                      <button
+                        key={shape}
+                        type="button"
+                        onClick={() =>
+                          setImageEditor((prev) =>
+                            prev ? { ...prev, avatarShape: shape } : prev
+                          )
+                        }
+                        className={`rounded-lg border px-3 py-2 text-sm capitalize hover:bg-gray-50 ${
+                          imageEditor.avatarShape === shape
+                            ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                            : ""
+                        }`}
+                      >
+                        {shape}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <label className="mb-2 flex items-center justify-between text-sm font-medium">
+                  <span>Zoom</span>
+                  <span className="text-gray-500">
+                    {imageEditor.zoom.toFixed(1)}x
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="2.5"
+                  step="0.05"
+                  value={imageEditor.zoom}
+                  onChange={(e) =>
+                    setImageEditor((prev) =>
+                      prev
+                        ? { ...prev, zoom: Number(e.target.value) }
+                        : prev
+                    )
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Horizontal Position
+                </label>
+                <input
+                  type="range"
+                  min="-50"
+                  max="50"
+                  step="1"
+                  value={imageEditor.x}
+                  onChange={(e) =>
+                    setImageEditor((prev) =>
+                      prev ? { ...prev, x: Number(e.target.value) } : prev
+                    )
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Vertical Position
+                </label>
+                <input
+                  type="range"
+                  min="-50"
+                  max="50"
+                  step="1"
+                  value={imageEditor.y}
+                  onChange={(e) =>
+                    setImageEditor((prev) =>
+                      prev ? { ...prev, y: Number(e.target.value) } : prev
+                    )
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setImageEditor((prev) =>
+                    prev ? { ...prev, zoom: 1, x: 0, y: 0 } : prev
+                  )
+                }
+                className="w-full rounded-lg border px-4 py-2 hover:bg-gray-50"
+              >
+                Reset Position
+              </button>
+
+              <div className="flex gap-3 border-t pt-4">
+                <button
+                  type="button"
+                  onClick={closeImageEditor}
+                  className="flex-1 rounded-lg border px-4 py-2 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyImageEdit}
+                  disabled={applyingImageEdit}
+                  className="flex-1 rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  {applyingImageEdit ? "Uploading..." : "Apply"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null}
 
     {locationPickerOpen ? (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
