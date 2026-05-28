@@ -3,6 +3,7 @@ import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { supabase } from "../lib/supabase";
 import sabiLogo from "../assets/sabi-logo.png";
+import { GoogleLogo } from "../components/google-logo";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -139,9 +140,7 @@ export function RegisterPage() {
             disabled={googleLoading || loading}
             className="mb-6 flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-base font-bold text-blue-600">
-              G
-            </span>
+            <GoogleLogo />
             {googleLoading ? "Connecting to Google..." : "Sign up with Google"}
           </button>
 
