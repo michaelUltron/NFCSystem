@@ -345,6 +345,7 @@ export function ProfilePage() {
   const [draggingMap, setDraggingMap] = useState(false);
   const [imageEditor, setImageEditor] = useState<ImageEditorState | null>(null);
   const [applyingImageEdit, setApplyingImageEdit] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
 
   const [form, setForm] = useState<FormState>({
     username: "",
@@ -575,6 +576,48 @@ export function ProfilePage() {
         }),
     },
   ];
+  const wizardSteps = [
+    {
+      title: "Welcome",
+      detail: "Build a polished card in a few focused steps.",
+    },
+    {
+      title: "Profile basics",
+      detail: "Set your name and public card link.",
+    },
+    {
+      title: "Photo and branding",
+      detail: "Add your profile photo and optional cover.",
+    },
+    {
+      title: "Contact details",
+      detail: "Add the details people should save.",
+    },
+    {
+      title: "Social links",
+      detail: "Connect visitors to your best channels.",
+    },
+    {
+      title: "Activate card",
+      detail: "Prepare your NFC card activation.",
+    },
+    {
+      title: "Preview public card",
+      detail: "Review the live card before sharing.",
+    },
+  ];
+  const activeWizardStep = wizardSteps[onboardingStep] ?? wizardSteps[0];
+  const isWizardStep = (step: number) =>
+    !onboardingMode || onboardingStep === step;
+  const showWizardWelcome = onboardingMode && onboardingStep === 0;
+  const showWizardBasics = isWizardStep(1);
+  const showWizardPhoto = isWizardStep(2);
+  const showWizardContact = isWizardStep(3);
+  const showWizardSocials = isWizardStep(4);
+  const showWizardActivate = isWizardStep(5);
+  const showWizardPreview = isWizardStep(6);
+  const canGoBack = onboardingStep > 0;
+  const canGoNext = onboardingStep < wizardSteps.length - 1;
   const requiredSetupComplete =
     !!form.avatar_url && !!form.full_name.trim() && !!cleanUsername;
 
@@ -1298,9 +1341,13 @@ export function ProfilePage() {
         <main className="flex-1 p-6">
           <div className="mb-8 flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <h1 className="text-3xl font-bold mb-2">My Digital Card</h1>
+              <h1 className="text-3xl font-bold mb-2">
+                {onboardingMode ? "Card Setup" : "My Digital Card"}
+              </h1>
               <p className="text-gray-600">
-                Manage your public profile and social links
+                {onboardingMode
+                  ? "Complete one step at a time and preview before sharing."
+                  : "Manage your public profile and social links"}
               </p>
             </div>
 
@@ -1354,15 +1401,13 @@ export function ProfilePage() {
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       <div>
                         <p className="text-sm font-semibold text-indigo-600 mb-1">
-                          Card setup tour
+                          Step {onboardingStep + 1} of {wizardSteps.length}
                         </p>
                         <h2 className="text-2xl font-bold mb-2">
-                          Let&apos;s make your public card ready to share
+                          {activeWizardStep.title}
                         </h2>
                         <p className="text-gray-600 max-w-2xl">
-                          Start with your photo so people recognize you when
-                          they tap your NFC card, then add the essentials and
-                          open the live public version.
+                          {activeWizardStep.detail}
                         </p>
                       </div>
 
@@ -1376,6 +1421,25 @@ export function ProfilePage() {
                     </div>
 
                     <div className="mt-6 space-y-4">
+                      <div className="grid grid-cols-2 gap-2 md:grid-cols-7">
+                        {wizardSteps.map((step, index) => (
+                          <button
+                            type="button"
+                            key={step.title}
+                            onClick={() => setOnboardingStep(index)}
+                            className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
+                              onboardingStep === index
+                                ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                                : "border-gray-200 bg-white text-gray-500 hover:border-indigo-200"
+                            }`}
+                          >
+                            <span className="block font-semibold">
+                              {index + 1}. {step.title}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                         <div className="flex items-center justify-between gap-3 mb-3">
                           <div>
@@ -1421,6 +1485,19 @@ export function ProfilePage() {
                         </div>
                       </div>
 
+                    {showWizardWelcome ? (
+                      <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-5">
+                        <h3 className="text-lg font-semibold text-indigo-950">
+                          Let&apos;s build your digital card in minutes.
+                        </h3>
+                        <p className="mt-2 text-sm text-indigo-800">
+                          You will add your identity, photo, contact details,
+                          social links, then activate and preview your public
+                          card. Use Next to move through each focused step.
+                        </p>
+                      </div>
+                    ) : null}
+
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                       {onboardingItems.map((item, index) => {
                         const Icon = item.complete ? CheckCircle2 : Circle;
@@ -1459,14 +1536,53 @@ export function ProfilePage() {
                         );
                       })}
                     </div>
+
+                    <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setOnboardingStep((prev) => Math.max(0, prev - 1))
+                        }
+                        disabled={!canGoBack}
+                        className="rounded-lg border px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Back
+                      </button>
+
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        {canGoNext ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOnboardingStep((prev) =>
+                                Math.min(wizardSteps.length - 1, prev + 1)
+                              )
+                            }
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+                          >
+                            Next
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleFinishSetup}
+                            disabled={saving || uploadingImage || uploadingCover}
+                            className="rounded-lg bg-gray-900 px-4 py-2 text-white hover:bg-black disabled:opacity-60"
+                          >
+                            Save and View Public Card
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     </div>
                   </div>
                 ) : null}
 
+                {(showWizardBasics || showWizardPhoto || showWizardContact) ? (
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
                     <h2 className="text-xl font-semibold">
-                      Basic Information
+                      {onboardingMode ? activeWizardStep.title : "Basic Information"}
                     </h2>
                     {onboardingMode ? (
                       <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
@@ -1476,6 +1592,7 @@ export function ProfilePage() {
                     ) : null}
                   </div>
 
+                  {showWizardPhoto ? (
                   <div
                     ref={photoSectionRef}
                     className={`mb-6 scroll-mt-24 p-2 -m-2 ${getTourHighlightClass(
@@ -1548,7 +1665,9 @@ export function ProfilePage() {
                       </div>
                     </div>
                   </div>
+                  ) : null}
 
+                  {showWizardPhoto ? (
                   <div className="mb-6">
                     <label className="block text-sm font-medium mb-2">
                       Cover Photo
@@ -1620,8 +1739,11 @@ export function ProfilePage() {
                       </div>
                     </div>
                   </div>
+                  ) : null}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {showWizardBasics ? (
+                    <>
                     <div
                       className={`p-2 -m-2 ${getTourHighlightClass(
                         "identity"
@@ -1701,7 +1823,11 @@ export function ProfilePage() {
                         </p>
                       ) : null}
                     </div>
+                    </>
+                    ) : null}
 
+                    {showWizardContact ? (
+                    <>
                     <div
                       ref={contactSectionRef}
                       className={`p-2 -m-2 scroll-mt-24 ${getTourHighlightClass(
@@ -1965,8 +2091,11 @@ export function ProfilePage() {
                         Open Google Maps, share the place, then paste the link here.
                       </p>
                     </div>
+                    </>
+                    ) : null}
                   </div>
 
+                  {showWizardContact ? (
                   <div className="mt-4">
                     <label
                       htmlFor="bio"
@@ -1991,8 +2120,11 @@ export function ProfilePage() {
                       </p>
                     ) : null}
                   </div>
+                  ) : null}
                 </div>
+                ) : null}
 
+                {showWizardSocials ? (
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <div className="mb-6 flex items-start justify-between gap-4">
                     <div>
@@ -2042,9 +2174,11 @@ export function ProfilePage() {
                     })}
                   </div>
                 </div>
+                ) : null}
               </div>
 
               <div className="space-y-6">
+                {showWizardActivate ? (
                 <div
                   ref={statusSectionRef}
                   className={`bg-white rounded-xl shadow-md p-6 scroll-mt-24 ${getTourHighlightClass(
@@ -2123,7 +2257,9 @@ export function ProfilePage() {
                     </button>
                   ) : null}
                 </div>
+                ) : null}
 
+                {showWizardPreview ? (
                 <div className="bg-white rounded-xl shadow-md p-6">
                   <h2 className="text-xl font-semibold mb-4">Public Preview</h2>
                   <div
@@ -2260,6 +2396,7 @@ export function ProfilePage() {
                     </div>
                   </div>
                 </div>
+                ) : null}
               </div>
             </div>
           )}
