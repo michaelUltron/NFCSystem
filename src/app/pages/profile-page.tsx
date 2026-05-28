@@ -962,6 +962,22 @@ export function ProfilePage() {
     );
   };
 
+  const renderWizardDialogMessage = () => {
+    if (!onboardingMode || (!error && !success)) return null;
+
+    return (
+      <div
+        className={`mb-4 rounded-lg border p-3 text-sm ${
+          error
+            ? "border-red-200 bg-red-50 text-red-700"
+            : "border-green-200 bg-green-50 text-green-700"
+        }`}
+      >
+        {error || success}
+      </div>
+    );
+  };
+
   const focusOnboardingTarget = ({
     key,
     message,
@@ -1534,6 +1550,7 @@ export function ProfilePage() {
 
                 {(showWizardBasics || showWizardPhoto || showWizardContact) ? (
                 <div className={wizardDialogClass}>
+                  {renderWizardDialogMessage()}
                   <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
                     <h2 className="text-xl font-semibold">
                       {onboardingMode ? activeWizardStep.title : "Basic Information"}
@@ -2081,6 +2098,7 @@ export function ProfilePage() {
 
                 {showWizardSocials ? (
                 <div className={wizardDialogClass}>
+                  {renderWizardDialogMessage()}
                   <div className="mb-6 flex items-start justify-between gap-4">
                     <div>
                       <h2 className="text-xl font-semibold">Social Links</h2>
@@ -2141,6 +2159,7 @@ export function ProfilePage() {
                     "finish"
                   )}`}
                 >
+                  {renderWizardDialogMessage()}
                   {renderTourTip("finish")}
                   <h2 className="text-xl font-semibold mb-4">Status</h2>
 
@@ -2218,6 +2237,7 @@ export function ProfilePage() {
 
                 {showWizardPreview ? (
                 <div className={wizardDialogClass}>
+                  {renderWizardDialogMessage()}
                   <h2 className="text-xl font-semibold mb-4">Public Preview</h2>
                   <div
                     className={`overflow-hidden border shadow-sm ${
