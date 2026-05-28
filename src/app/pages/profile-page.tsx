@@ -555,6 +555,9 @@ export function ProfilePage() {
   const requiredSetupComplete =
     !!form.avatar_url && !!form.full_name.trim() && !!cleanUsername;
   const canSaveProgress = !!form.full_name.trim() && !!cleanUsername;
+  const wizardDialogClass = onboardingMode
+    ? "fixed inset-x-3 bottom-3 top-20 z-40 mx-auto max-w-3xl overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 shadow-2xl md:bottom-6 md:top-24 md:p-6"
+    : "bg-white rounded-xl shadow-md p-6";
 
   const openImageEditor = (kind: "avatar" | "cover", file: File) => {
     setImageEditor((prev) => {
@@ -924,6 +927,43 @@ export function ProfilePage() {
     if (saved) {
       navigate(`/card/${cleanUsername}`);
     }
+  };
+
+  const renderWizardDialogFooter = () => {
+    if (!onboardingMode) return null;
+
+    return (
+      <div className="sticky bottom-0 -mx-5 mt-6 flex flex-col gap-3 border-t bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:-mx-6 md:px-6">
+        <button
+          type="button"
+          onClick={() => setOnboardingStep((prev) => Math.max(0, prev - 1))}
+          disabled={!canGoBack}
+          className="rounded-lg border px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          Back
+        </button>
+
+        {canGoNext ? (
+          <button
+            type="button"
+            onClick={handleWizardNext}
+            disabled={saving || uploadingImage || uploadingCover}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Next"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleFinishSetup}
+            disabled={saving || uploadingImage || uploadingCover}
+            className="rounded-lg bg-gray-900 px-4 py-2 text-white hover:bg-black disabled:opacity-60"
+          >
+            Save and View Public Card
+          </button>
+        )}
+      </div>
+    );
   };
 
   const focusOnboardingTarget = ({
@@ -1339,6 +1379,10 @@ export function ProfilePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {onboardingMode && onboardingStep > 0 ? (
+                <div className="fixed inset-0 z-30 bg-gray-900/35" />
+              ) : null}
+
               <div className="lg:col-span-2 space-y-6">
                 {onboardingMode && (error || success) ? (
                   <div
@@ -1493,7 +1537,7 @@ export function ProfilePage() {
                 ) : null}
 
                 {(showWizardBasics || showWizardPhoto || showWizardContact) ? (
-                <div className="bg-white rounded-xl shadow-md p-6">
+                <div className={wizardDialogClass}>
                   <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
                     <h2 className="text-xl font-semibold">
                       {onboardingMode ? activeWizardStep.title : "Basic Information"}
@@ -2035,11 +2079,12 @@ export function ProfilePage() {
                     ) : null}
                   </div>
                   ) : null}
+                  {renderWizardDialogFooter()}
                 </div>
                 ) : null}
 
                 {showWizardSocials ? (
-                <div className="bg-white rounded-xl shadow-md p-6">
+                <div className={wizardDialogClass}>
                   <div className="mb-6 flex items-start justify-between gap-4">
                     <div>
                       <h2 className="text-xl font-semibold">Social Links</h2>
@@ -2087,6 +2132,7 @@ export function ProfilePage() {
                       );
                     })}
                   </div>
+                  {renderWizardDialogFooter()}
                 </div>
                 ) : null}
               </div>
@@ -2095,7 +2141,7 @@ export function ProfilePage() {
                 {showWizardActivate ? (
                 <div
                   ref={statusSectionRef}
-                  className={`bg-white rounded-xl shadow-md p-6 scroll-mt-24 ${getTourHighlightClass(
+                  className={`${wizardDialogClass} scroll-mt-24 ${getTourHighlightClass(
                     "finish"
                   )}`}
                 >
@@ -2170,11 +2216,12 @@ export function ProfilePage() {
                       Save and View Public Card
                     </button>
                   ) : null}
+                  {renderWizardDialogFooter()}
                 </div>
                 ) : null}
 
                 {showWizardPreview ? (
-                <div className="bg-white rounded-xl shadow-md p-6">
+                <div className={wizardDialogClass}>
                   <h2 className="text-xl font-semibold mb-4">Public Preview</h2>
                   <div
                     className={`overflow-hidden border shadow-sm ${
@@ -2309,6 +2356,7 @@ export function ProfilePage() {
                       </div>
                     </div>
                   </div>
+                  {renderWizardDialogFooter()}
                 </div>
                 ) : null}
               </div>
