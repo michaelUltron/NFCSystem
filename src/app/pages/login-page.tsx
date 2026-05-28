@@ -14,6 +14,7 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -73,6 +74,34 @@ export function LoginPage() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      setError("");
+      setSuccess("");
+
+      if (!next.startsWith("/activate")) {
+        clearPendingCardUid();
+      }
+
+      const redirectTo = `${window.location.origin}${next}`;
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (oauthError) throw oauthError;
+    } catch (err: any) {
+      setError(err.message || "Google sign in failed.");
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
       <div className="max-w-md w-full">
@@ -90,6 +119,26 @@ export function LoginPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-8">
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={googleLoading || loading}
+            className="mb-6 flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-base font-bold text-blue-600">
+              G
+            </span>
+            {googleLoading ? "Connecting to Google..." : "Sign in with Google"}
+          </button>
+
+          <div className="mb-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+              or
+            </span>
+            <div className="h-px flex-1 bg-gray-200" />
+          </div>
+
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-2">
