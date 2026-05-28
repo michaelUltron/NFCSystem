@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
   User,
@@ -10,6 +10,7 @@ import {
   Package,
   Building2,
   HelpCircle,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import sabiLogo from "../assets/sabi-logo.png";
@@ -41,6 +42,7 @@ type NavSection = {
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -255,6 +257,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     return null;
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onClose?.();
+    navigate("/login");
+  };
+
   return (
     <>
       {isOpen && (
@@ -265,7 +273,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed lg:static z-50 top-0 left-0 h-full w-64 bg-white border-r transform transition-transform duration-200 overflow-y-auto ${
+        className={`fixed lg:static z-50 top-0 left-0 h-full w-64 bg-white border-r transform transition-transform duration-200 flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -280,7 +288,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           </Link>
         </div>
 
-        <nav className="p-4 space-y-6">
+        <nav className="p-4 space-y-6 flex-1 overflow-y-auto">
           {sections
             .filter((section) => section.visible)
             .map((section) => (
@@ -316,6 +324,17 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               </div>
             ))}
         </nav>
+
+        <div className="border-t p-4">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-red-600 transition-colors hover:bg-red-50"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </aside>
     </>
   );
