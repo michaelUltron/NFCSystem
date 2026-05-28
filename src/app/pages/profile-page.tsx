@@ -21,8 +21,6 @@ import {
   AtSign,
   LoaderCircle,
   Upload,
-  CheckCircle2,
-  Circle,
   Camera,
   CreditCard,
   Sparkles,
@@ -512,43 +510,6 @@ export function ProfilePage() {
       : profileStrength >= 60
       ? "Almost ready"
       : "Needs essentials";
-  const onboardingItems = [
-    {
-      label: "Upload a clear profile photo",
-      detail: "Use a friendly headshot so contacts know they found the right card.",
-      complete: !!form.avatar_url,
-      highlight: true,
-      step: 2,
-    },
-    {
-      label: "Add your name and public username",
-      detail: "This gives your card a clean public link.",
-      complete: !!form.full_name.trim() && !!cleanUsername,
-      step: 1,
-    },
-    {
-      label: "Add your role, company, and contact details",
-      detail: "Add the business details people should save.",
-      complete: hasRole && hasContact,
-      step: 3,
-    },
-    {
-      label: "Activate your first NFC card",
-      detail: hasActivatedCard
-        ? `${activatedCardCount} active card${
-            activatedCardCount === 1 ? "" : "s"
-          } linked.`
-        : "Tap or scan the physical card to start activation.",
-      complete: hasActivatedCard,
-      step: 5,
-    },
-    {
-      label: "Save and open your public card",
-      detail: "Check the live card exactly like a visitor will see it.",
-      complete: false,
-      step: 6,
-    },
-  ];
   const wizardSteps = [
     {
       title: "Welcome",
@@ -1492,45 +1453,6 @@ export function ProfilePage() {
                         </p>
                       </div>
                     ) : null}
-
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                      {onboardingItems.map((item, index) => {
-                        const Icon = item.complete ? CheckCircle2 : Circle;
-                        return (
-                          <button
-                            type="button"
-                            key={item.label}
-                            onClick={() => setOnboardingStep(item.step)}
-                            className={`rounded-lg border p-4 ${
-                              item.highlight && !item.complete
-                                ? "border-indigo-200 bg-indigo-50"
-                                : item.complete
-                                ? "border-green-200 bg-green-50"
-                                : "border-gray-200 bg-white"
-                            } text-left transition hover:border-indigo-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <Icon
-                                className={`w-5 h-5 ${
-                                  item.complete
-                                    ? "text-green-600"
-                                    : "text-gray-400"
-                                }`}
-                              />
-                              <span className="text-xs font-semibold text-gray-500">
-                                Step {index + 1}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {item.label}
-                            </p>
-                            <p className="mt-2 text-xs text-gray-500">
-                              {item.detail}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
 
                     <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                       <button
