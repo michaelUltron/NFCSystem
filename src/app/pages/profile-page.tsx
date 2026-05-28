@@ -532,10 +532,6 @@ export function ProfilePage() {
       detail: "Connect visitors to your best channels.",
     },
     {
-      title: "Activate card",
-      detail: "Prepare your NFC card activation.",
-    },
-    {
       title: "Preview public card",
       detail: "Review the live card before sharing.",
     },
@@ -548,8 +544,8 @@ export function ProfilePage() {
   const showWizardPhoto = isWizardStep(2);
   const showWizardContact = isWizardStep(3);
   const showWizardSocials = isWizardStep(4);
-  const showWizardActivate = isWizardStep(5);
-  const showWizardPreview = isWizardStep(6);
+  const showWizardActivate = !onboardingMode;
+  const showWizardPreview = isWizardStep(5);
   const canGoBack = onboardingStep > 0;
   const canGoNext = onboardingStep < wizardSteps.length - 1;
   const requiredSetupComplete =
