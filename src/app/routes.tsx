@@ -20,6 +20,7 @@ import { BusinessCardsPage } from "./pages/business-cards-page";
 import { OrganizationInvitesPage } from "./pages/organization-invites-page";
 import { BusinessLeadsAnalyticsPage } from "./pages/business-leads-analytics-page";
 import { HelpPage } from "./pages/help-page";
+import { AuthCallbackPage } from "./pages/auth-callback-page";
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +34,10 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     Component: RegisterPage,
+  },
+  {
+    path: "/auth/callback",
+    Component: AuthCallbackPage,
   },
   {
     path: "/dashboard",

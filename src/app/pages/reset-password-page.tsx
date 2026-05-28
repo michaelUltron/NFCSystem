@@ -29,10 +29,24 @@ export function ResetPasswordPage() {
           ? window.location.hash.substring(1)
           : "";
         const hashParams = new URLSearchParams(hash);
+        const queryParams = new URLSearchParams(window.location.search);
 
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-        const type = hashParams.get("type");
+        const accessToken =
+          hashParams.get("access_token") || queryParams.get("access_token");
+        const refreshToken =
+          hashParams.get("refresh_token") || queryParams.get("refresh_token");
+        const type = hashParams.get("type") || queryParams.get("type");
+
+        if (type && type !== "recovery") {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+
+        if (type !== "recovery") {
+          throw new Error(
+            "This page is only for password reset links. Please request a new password reset email."
+          );
+        }
 
         if (type === "recovery" && accessToken && refreshToken) {
           const { error: sessionError } = await supabase.auth.setSession({

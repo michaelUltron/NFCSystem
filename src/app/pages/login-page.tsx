@@ -85,7 +85,9 @@ export function LoginPage() {
         clearPendingCardUid();
       }
 
-      const redirectTo = `${window.location.origin}${next}`;
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+        next
+      )}`;
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
