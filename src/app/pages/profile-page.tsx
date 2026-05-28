@@ -518,35 +518,19 @@ export function ProfilePage() {
       detail: "Use a friendly headshot so contacts know they found the right card.",
       complete: !!form.avatar_url,
       highlight: true,
-      action: () =>
-        focusOnboardingTarget({
-          key: "photo",
-          message: "Click Upload Image and choose a clear photo of yourself.",
-          sectionRef: photoSectionRef,
-          inputRef: uploadButtonRef,
-        }),
+      step: 2,
     },
     {
       label: "Add your name and public username",
       detail: "This gives your card a clean public link.",
       complete: !!form.full_name.trim() && !!cleanUsername,
-      action: () =>
-        focusOnboardingTarget({
-          key: "identity",
-          message: "Enter your full name, then choose your public card username.",
-          inputRef: nameInputRef,
-        }),
+      step: 1,
     },
     {
       label: "Add your role, company, and contact details",
       detail: "Add the business details people should save.",
       complete: hasRole && hasContact,
-      action: () =>
-        focusOnboardingTarget({
-          key: "contact",
-          message: "Add the details visitors should see when they open your card.",
-          sectionRef: contactSectionRef,
-        }),
+      step: 3,
     },
     {
       label: "Activate your first NFC card",
@@ -556,24 +540,13 @@ export function ProfilePage() {
           } linked.`
         : "Tap or scan the physical card to start activation.",
       complete: hasActivatedCard,
-      action: () =>
-        focusOnboardingTarget({
-          key: "finish",
-          message:
-            "After saving, tap your physical NFC card with your phone or scan its QR code to activate it.",
-          sectionRef: statusSectionRef,
-        }),
+      step: 5,
     },
     {
       label: "Save and open your public card",
       detail: "Check the live card exactly like a visitor will see it.",
       complete: false,
-      action: () =>
-        focusOnboardingTarget({
-          key: "finish",
-          message: "Save your changes, then open the public version of your card.",
-          sectionRef: statusSectionRef,
-        }),
+      step: 6,
     },
   ];
   const wizardSteps = [
@@ -620,6 +593,7 @@ export function ProfilePage() {
   const canGoNext = onboardingStep < wizardSteps.length - 1;
   const requiredSetupComplete =
     !!form.avatar_url && !!form.full_name.trim() && !!cleanUsername;
+  const canSaveProgress = !!form.full_name.trim() && !!cleanUsername;
 
   const openImageEditor = (kind: "avatar" | "cover", file: File) => {
     setImageEditor((prev) => {
@@ -966,6 +940,15 @@ export function ProfilePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleWizardNext = async () => {
+    if (canSaveProgress) {
+      const saved = await handleSave();
+      if (!saved) return;
+    }
+
+    setOnboardingStep((prev) => Math.min(wizardSteps.length - 1, prev + 1));
   };
 
   const handleFinishSetup = async () => {
@@ -1396,6 +1379,18 @@ export function ProfilePage() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
+                {onboardingMode && (error || success) ? (
+                  <div
+                    className={`rounded-xl border p-4 text-sm ${
+                      error
+                        ? "border-red-200 bg-red-50 text-red-700"
+                        : "border-green-200 bg-green-50 text-green-700"
+                    }`}
+                  >
+                    {error || success}
+                  </div>
+                ) : null}
+
                 {onboardingMode ? (
                   <div className="bg-white rounded-xl shadow-md p-6 border border-indigo-100">
                     <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -1505,7 +1500,7 @@ export function ProfilePage() {
                           <button
                             type="button"
                             key={item.label}
-                            onClick={item.action}
+                            onClick={() => setOnboardingStep(item.step)}
                             className={`rounded-lg border p-4 ${
                               item.highlight && !item.complete
                                 ? "border-indigo-200 bg-indigo-50"
@@ -1553,14 +1548,11 @@ export function ProfilePage() {
                         {canGoNext ? (
                           <button
                             type="button"
-                            onClick={() =>
-                              setOnboardingStep((prev) =>
-                                Math.min(wizardSteps.length - 1, prev + 1)
-                              )
-                            }
-                            className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+                            onClick={handleWizardNext}
+                            disabled={saving || uploadingImage || uploadingCover}
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60"
                           >
-                            Next
+                            {saving ? "Saving..." : "Next"}
                           </button>
                         ) : (
                           <button
