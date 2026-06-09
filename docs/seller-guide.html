@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>SabiCard Seller Guide</title>
+  <style>
+    @page { size: A4; margin: 18mm; }
+    * { box-sizing: border-box; }
+    body {
+      color: #111827;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 0;
+    }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    h2 { border-bottom: 1px solid #e5e7eb; font-size: 18px; margin: 26px 0 10px; padding-bottom: 6px; }
+    h3 { font-size: 14px; margin: 14px 0 6px; }
+    p { margin: 0 0 8px; }
+    ul, ol { margin: 8px 0 12px 20px; padding: 0; }
+    li { margin: 4px 0; }
+    .cover {
+      align-items: flex-start;
+      display: flex;
+      flex-direction: column;
+      min-height: 220px;
+      justify-content: center;
+    }
+    .muted { color: #6b7280; }
+    .callout {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      color: #3730a3;
+      margin: 12px 0;
+      padding: 12px;
+    }
+    .policy {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin: 10px 0;
+      padding: 12px;
+    }
+    .shot {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      margin: 10px 0 18px;
+      max-width: 100%;
+      width: 100%;
+    }
+    .page-break { break-before: page; }
+    code {
+      background: #f3f4f6;
+      border-radius: 4px;
+      font-family: Consolas, monospace;
+      padding: 2px 4px;
+    }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <h1>SabiCard Seller Guide</h1>
+    <p class="muted">MVP onboarding, seller activation, card registration, NFC encoding, credits, and seller policies.</p>
+    <p class="muted">Generated from actual SabiCard application screenshots.</p>
+  </section>
+
+  <h2>1. Seller Account Registration</h2>
+  <p>A seller starts by creating a normal SabiCard account. For the MVP, seller access is not automatic. The platform admin reviews and activates the seller account.</p>
+  <ol>
+    <li>Open the registration page.</li>
+    <li>Enter full name, email, password, and confirmation password.</li>
+    <li>After registration, sign in with the new account.</li>
+  </ol>
+  <img class="shot" src="seller-guide-assets/01-register.png" />
+
+  <h2>2. Sign In</h2>
+  <p>The seller signs in using the same account that will later be approved by the admin.</p>
+  <img class="shot" src="seller-guide-assets/02-login.png" />
+
+  <h2 class="page-break">3. Seller Access</h2>
+  <p>In this MVP, seller access is approved by the platform before the Seller Dashboard becomes available. Once approved, the seller signs in with their normal SabiCard account and opens the Seller Dashboard.</p>
+  <ol>
+    <li>Create or sign in to the seller account.</li>
+    <li>Wait for platform approval.</li>
+    <li>Open <code>/seller</code> to manage credits and cards.</li>
+  </ol>
+
+  <h2 class="page-break">4. Seller Dashboard</h2>
+  <p>After activation, the seller can open the Seller Dashboard. This dashboard shows credits, total cards, unactivated cards, and activated cards.</p>
+  <img class="shot" src="seller-guide-assets/05-seller-dashboard.png" />
+
+  <h2>5. Registering a Card</h2>
+  <p>To issue a card, the seller enters or generates a Card UID and clicks <strong>Register and Use 1 Credit</strong>.</p>
+  <div class="callout">
+    One successful card registration consumes exactly 1 seller credit. Failed NFC writing does not consume another credit because the credit is deducted when the card record is registered in the platform.
+  </div>
+  <img class="shot" src="seller-guide-assets/06-register-card.png" />
+
+  <h2 class="page-break">6. Encoding the NFC Card</h2>
+  <p>After registration, the seller can encode the card by writing the card tap URL to the physical NFC tag.</p>
+  <ol>
+    <li>Find the card in Seller Cards.</li>
+    <li>Click <strong>Encode NFC</strong>.</li>
+    <li>Use Chrome on Android over HTTPS with NFC enabled.</li>
+    <li>Hold the card still near the phone until writing finishes.</li>
+  </ol>
+  <p>If Web NFC is not supported on the device, copy the Tap URL and use another NFC writer app or compatible Android browser/device.</p>
+  <img class="shot" src="seller-guide-assets/07-encode-card.png" />
+
+  <h2>7. Customer Activation</h2>
+  <p>The seller gives the encoded card to the customer. When the customer taps the card, SabiCard opens the activation page. The customer creates or signs in to their own account, then confirms activation.</p>
+  <p>The system automatically links the activated card and customer back to the seller who registered the card.</p>
+  <img class="shot" src="seller-guide-assets/08-activation.png" />
+
+  <h2 class="page-break">Credit Rules</h2>
+  <div class="policy">
+    <h3>Credit Usage</h3>
+    <ul>
+      <li>1 registered card = 1 credit consumed.</li>
+      <li>Credits are deducted only after successful card registration.</li>
+      <li>Duplicate card UIDs should not be registered again.</li>
+      <li>Credits are tracked in a ledger for audit history.</li>
+    </ul>
+  </div>
+  <div class="policy">
+    <h3>Seller Access</h3>
+    <ul>
+      <li>Seller accounts are admin-approved during the MVP.</li>
+      <li>Suspended sellers cannot register new cards.</li>
+      <li>Seller dashboard data is limited to cards registered by that seller.</li>
+      <li>Users activate their own accounts; sellers do not create customer accounts.</li>
+    </ul>
+  </div>
+  <div class="policy">
+    <h3>Replacement and Support Policy</h3>
+    <ul>
+      <li>Each new physical card registration uses a credit.</li>
+      <li>Lost, defective, or replacement cards should be handled according to admin policy.</li>
+      <li>Admin may adjust credits manually for approved support cases.</li>
+      <li>Card ownership should not be transferred after activation without admin review.</li>
+    </ul>
+  </div>
+</body>
+</html>
