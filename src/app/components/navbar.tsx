@@ -18,13 +18,13 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features"className="text-gray-600 hover:text-gray-900">
+            <a href="/#features" className="text-gray-600 hover:text-gray-900">
               Features
             </a>
-            <a  href="#pricing" className="text-gray-600 hover:text-gray-900">
+            <a href="/#pricing" className="text-gray-600 hover:text-gray-900">
               Pricing
             </a>
-            <a  href="#how-it-works" className="text-gray-600 hover:text-gray-900">
+            <a href="/#how-it-works" className="text-gray-600 hover:text-gray-900">
               How it works
             </a>
             <Link to="/login" className="text-gray-600 hover:text-gray-900">
@@ -50,13 +50,13 @@ export function Navbar() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 flex flex-col gap-4">
-            <a href="#features" className="text-gray-600 hover:text-gray-900">
+            <a href="/#features" className="text-gray-600 hover:text-gray-900">
               Features
             </a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900">
+            <a href="/#pricing" className="text-gray-600 hover:text-gray-900">
               Pricing
             </a>
-            <a href="#how-it-works" className="text-gray-600 hover:text-gray-900">
+            <a href="/#how-it-works" className="text-gray-600 hover:text-gray-900">
               How it works
             </a>
             <Link to="/login" className="text-gray-600 hover:text-gray-900">

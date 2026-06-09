@@ -34,19 +34,19 @@ export function Footer({ onOpenPrivacy, onOpenTerms }: FooterProps) {
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2 text-gray-400 text-sm">
               <li>
-                <Link to="/#features" className="hover:text-white">
+                <a href="/#features" className="hover:text-white">
                   Features
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/#pricing" className="hover:text-white">
+                <a href="/#pricing" className="hover:text-white">
                   Pricing
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/#how-it-works" className="hover:text-white">
+                <a href="/#how-it-works" className="hover:text-white">
                   How It Works
-                </Link>
+                </a>
               </li>
               <li>
                 <Link to="/order" className="hover:text-white">
@@ -116,9 +116,27 @@ export function Footer({ onOpenPrivacy, onOpenTerms }: FooterProps) {
         </div>
 
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-gray-400 text-sm text-center md:text-left">
-            © 2026 SabiCard. All rights reserved.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-3 text-gray-400 text-sm text-center md:text-left">
+            <span>{"\u00a9"} 2026 SabiCard. All rights reserved.</span>
+            {onOpenPrivacy ? (
+              <button
+                type="button"
+                onClick={onOpenPrivacy}
+                className="hover:text-white"
+              >
+                Privacy Policy
+              </button>
+            ) : null}
+            {onOpenTerms ? (
+              <button
+                type="button"
+                onClick={onOpenTerms}
+                className="hover:text-white"
+              >
+                Terms of Use
+              </button>
+            ) : null}
+          </div>
 
           <div className="flex gap-4">
             <a

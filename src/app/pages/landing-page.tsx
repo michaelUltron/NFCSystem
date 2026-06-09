@@ -175,6 +175,22 @@ export function LandingPage() {
     loadPlans();
   }, []);
 
+  useEffect(() => {
+    const scrollToHash = () => {
+      const id = window.location.hash.replace("#", "");
+      if (!id) return;
+
+      window.requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({ block: "start" });
+      });
+    };
+
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, []);
+
   const pricingPlans = useMemo(() => plans, [plans]);
 
   const closeModal = () => setOpenModal(null);
@@ -223,12 +239,12 @@ export function LandingPage() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
 
-              <a
-                href="/order"
+              <Link
+                to="/order"
                 className="border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-6 py-3 text-center"
               >
                 Buy NFC Card
-              </a>
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8 text-sm text-gray-600">
@@ -598,7 +614,10 @@ export function LandingPage() {
         </div>
       </section>
 
-      <Footer />
+      <Footer
+        onOpenPrivacy={() => setOpenModal("privacy")}
+        onOpenTerms={() => setOpenModal("terms")}
+      />
 
       {openModal === "privacy" ? (
         <PolicyModal
