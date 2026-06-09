@@ -103,6 +103,86 @@
       gap: 10px;
       grid-template-columns: repeat(2, 1fr);
     }
+    .checklist {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      margin: 12px 0 18px;
+    }
+    .checklist div {
+      background: #ffffff;
+      border: 1px solid #bae6fd;
+      border-radius: 10px;
+      min-height: 68px;
+      padding: 10px;
+    }
+    .checklist span {
+      background: #06b6d4;
+      border-radius: 999px;
+      color: #ffffff;
+      display: inline-flex;
+      font-size: 11px;
+      font-weight: 700;
+      height: 22px;
+      justify-content: center;
+      margin-right: 6px;
+      width: 22px;
+    }
+    .workflow {
+      align-items: stretch;
+      display: grid;
+      gap: 8px;
+      grid-template-columns: 1fr 20px 1fr 20px 1fr 20px 1fr 20px 1fr;
+      margin: 12px 0 18px;
+    }
+    .workflow div:not(.arrow) {
+      background: #f0f9ff;
+      border: 1px solid #7dd3fc;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .workflow .arrow {
+      align-items: center;
+      color: #06b6d4;
+      display: flex;
+      font-size: 18px;
+      font-weight: 700;
+      justify-content: center;
+    }
+    .do-dont {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .do-dont section {
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .do {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+    }
+    .dont {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+    }
+    table {
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f9ff;
+      color: #164e63;
+      font-weight: 700;
+    }
     .shot {
       border: 1px solid #d1d5db;
       border-radius: 10px;
@@ -147,6 +227,35 @@
       <div><strong>Customer activation:</strong><br />Completed with a live guide account</div>
     </div>
   </section>
+
+  
+    <h2>Quick Start Checklist</h2>
+    <div class="checklist">
+      <div><span>1</span> Sign in to the approved seller account.</div>
+      <div><span>2</span> Confirm available seller credits.</div>
+      <div><span>3</span> Generate or enter a Card UID.</div>
+      <div><span>4</span> Click <strong>Register and Use 1 Credit</strong>.</div>
+      <div><span>5</span> Encode the NFC card using Encode NFC or Copy URL.</div>
+      <div><span>6</span> Test the physical card before release.</div>
+      <div><span>7</span> Give the card to the customer.</div>
+      <div><span>8</span> Customer creates/signs in and confirms activation.</div>
+      <div><span>9</span> Confirm the card appears as activated in Seller Cards.</div>
+    </div>
+  
+  
+    <h2>Seller Workflow</h2>
+    <div class="workflow">
+      <div><strong>Register Card</strong><br />Seller creates card record.</div>
+      <div class="arrow">→</div>
+      <div><strong>Credit Deducted</strong><br />1 credit is consumed.</div>
+      <div class="arrow">→</div>
+      <div><strong>Encode NFC</strong><br />Tap URL is written to card.</div>
+      <div class="arrow">→</div>
+      <div><strong>Customer Activates</strong><br />User account claims the card.</div>
+      <div class="arrow">→</div>
+      <div><strong>Dashboard Updates</strong><br />Card becomes activated.</div>
+    </div>
+  
 
   <h2>1. Seller Account Registration</h2>
   <p>A seller starts with a normal SabiCard account. Seller privileges are granted by the platform after review.</p>
@@ -216,6 +325,123 @@
       <li>Suspended sellers cannot issue new cards until reactivated by SabiCard.</li>
     </ul>
   </div>
+  
+    <h2>Credit Ledger Example</h2>
+    <p>The seller credit balance is calculated from a ledger. Every top-up and every card registration creates a transaction record.</p>
+    <table>
+      <thead>
+        <tr><th>Action</th><th>Credit Change</th><th>Balance</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Admin adds seller credits</td><td>+100</td><td>100</td></tr>
+        <tr><td>Seller registers one card</td><td>-1</td><td>99</td></tr>
+        <tr><td>Seller registers another card</td><td>-1</td><td>98</td></tr>
+        <tr><td>Admin support adjustment</td><td>+1</td><td>99</td></tr>
+      </tbody>
+    </table>
+  
+  
+    <h2 class="page-break">Device Requirements</h2>
+    <div class="terms-grid">
+      <section>
+        <h3>Recommended Setup</h3>
+        <ul>
+          <li>Android phone with NFC support.</li>
+          <li>Chrome browser.</li>
+          <li>NFC enabled in device settings.</li>
+          <li>Stable internet connection.</li>
+          <li>Writable NFC card or tag.</li>
+          <li>SabiCard opened over HTTPS.</li>
+        </ul>
+      </section>
+      <section>
+        <h3>Important Notes</h3>
+        <ul>
+          <li>Browser-based NFC writing may not work on all iPhones.</li>
+          <li>If Web NFC is unavailable, use Copy URL and a compatible NFC writer app.</li>
+          <li>Keep the card still near the phone until writing completes.</li>
+          <li>Always test the card before giving it to the customer.</li>
+        </ul>
+      </section>
+    </div>
+
+    <h2>Card Testing Procedure</h2>
+    <ol>
+      <li>After encoding, tap the physical card with a phone.</li>
+      <li>Confirm the URL opens <code>https://www.sabicard.app/tap?uid=...</code>.</li>
+      <li>Confirm an unassigned card redirects to activation.</li>
+      <li>Do not activate the card using the seller account.</li>
+      <li>Give the card to the customer only after the tap test succeeds.</li>
+    </ol>
+  
+  
+    <h2 class="page-break">Troubleshooting</h2>
+    <table>
+      <thead>
+        <tr><th>Issue</th><th>Likely Cause</th><th>Recommended Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>NFC writing is not supported</td><td>Browser or device does not support Web NFC.</td><td>Use Chrome on Android over HTTPS, or copy the tap URL and write it with another NFC writer app.</td></tr>
+        <tr><td>Seller has no credits</td><td>Credit balance is zero.</td><td>Contact SabiCard admin to top up seller credits before registering more cards.</td></tr>
+        <tr><td>Card tap opens the wrong page</td><td>Wrong URL was encoded to the physical NFC card.</td><td>Copy the tap URL from the seller dashboard and rewrite the NFC card.</td></tr>
+        <tr><td>Card is already activated</td><td>The card was claimed by a customer account.</td><td>Do not reuse the card. Contact support if activation was accidental or disputed.</td></tr>
+        <tr><td>Card registered but not encoded</td><td>The digital card exists but the physical NFC tag was not written.</td><td>Find the card in Seller Cards, then use Encode NFC or Copy URL.</td></tr>
+        <tr><td>Customer cannot log in</td><td>Incorrect password, unverified email, or account issue.</td><td>Ask the customer to use password reset or contact SabiCard support.</td></tr>
+        <tr><td>Card does not appear in dashboard</td><td>The card may belong to another seller or registration failed.</td><td>Search by Card UID. If missing, confirm credits and retry registration.</td></tr>
+      </tbody>
+    </table>
+  
+  
+    <h2 class="page-break">Seller Policy Summary</h2>
+    <div class="do-dont">
+      <section class="do">
+        <h3>Do</h3>
+        <ul>
+          <li>Register cards only for real customer transactions.</li>
+          <li>Test every encoded card before release.</li>
+          <li>Protect customer information.</li>
+          <li>Use the official tap URL from the dashboard.</li>
+          <li>Contact support for replacements or disputed activations.</li>
+        </ul>
+      </section>
+      <section class="dont">
+        <h3>Do Not</h3>
+        <ul>
+          <li>Share your seller login with unauthorized users.</li>
+          <li>Create customer accounts without customer consent.</li>
+          <li>Reuse cards that are already activated.</li>
+          <li>Encode misleading, unsafe, or unauthorized links.</li>
+          <li>Continue selling after suspension or credit exhaustion.</li>
+        </ul>
+      </section>
+    </div>
+  
+  
+    <h2>Support Escalation</h2>
+    <p>Contact SabiCard admin or support when any of these situations happen:</p>
+    <ul>
+      <li>Seller needs additional credits or credit adjustment.</li>
+      <li>Wrong customer activated a card.</li>
+      <li>A card is lost, defective, or needs replacement.</li>
+      <li>NFC encoding repeatedly fails across supported devices.</li>
+      <li>Customer reports duplicate activation or unauthorized card usage.</li>
+      <li>Suspicious account, card, or activation activity appears.</li>
+    </ul>
+
+    <h2>Glossary</h2>
+    <table>
+      <tbody>
+        <tr><th>Card UID</th><td>The unique card identifier used by SabiCard.</td></tr>
+        <tr><th>Tap URL</th><td>The URL written to the physical NFC card.</td></tr>
+        <tr><th>Activation</th><td>The process where a customer claims a card to their own account.</td></tr>
+        <tr><th>Seller Credits</th><td>Credits consumed when sellers register new cards.</td></tr>
+        <tr><th>Registered Card</th><td>A card created in the seller dashboard but not necessarily activated by a customer.</td></tr>
+        <tr><th>Activated Card</th><td>A registered card that has been claimed by a customer account.</td></tr>
+        <tr><th>NFC Encoding</th><td>Writing the SabiCard tap URL to the physical NFC tag or card.</td></tr>
+        <tr><th>Customer Account</th><td>The end user's personal SabiCard account.</td></tr>
+      </tbody>
+    </table>
+  
 
   
     <h2 class="page-break">Terms and Conditions for Sellers</h2>
