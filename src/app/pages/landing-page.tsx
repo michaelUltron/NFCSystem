@@ -269,31 +269,40 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="relative min-h-[540px] overflow-hidden rounded-3xl bg-slate-950 p-5 shadow-2xl md:min-h-[600px] lg:min-h-[620px]">
+          <div className="relative overflow-hidden rounded-3xl bg-slate-950 p-5 shadow-2xl ring-1 ring-slate-900/10">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.22),transparent_36%),linear-gradient(135deg,rgba(15,23,42,0.12),rgba(15,23,42,0.84))]" />
             <img
               src={sabiBanner}
               alt="SabiCard physical NFC card"
-              className="absolute inset-x-5 top-5 h-[235px] w-[calc(100%-2.5rem)] rounded-2xl object-cover opacity-95 shadow-xl md:h-[280px]"
+              className="relative h-[360px] w-full rounded-2xl object-cover shadow-2xl md:h-[470px] lg:h-[520px]"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/10 to-slate-950" />
 
-            <div className="relative z-10 flex h-full min-h-[500px] flex-col justify-end md:min-h-[560px]">
-              <div className="mb-5 max-w-xs rounded-2xl border border-white/10 bg-white/10 p-4 text-white backdrop-blur">
+            <div className="relative mt-5 grid grid-cols-1 gap-3 text-white sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
                 <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">
-                  Physical card to digital profile
+                  Tap Ready
                 </p>
                 <p className="mt-2 text-sm text-slate-100">
-                  One NFC tap opens a live profile visitors can save, call,
-                  email, or scan.
+                  Physical NFC card opens your digital profile.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">
+                  13.56 MHz
+                </p>
+                <p className="mt-2 text-sm text-slate-100">
+                  Built for SabiCard-compatible NFC cards.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">
+                  No App
+                </p>
+                <p className="mt-2 text-sm text-slate-100">
+                  Recipients can view and save instantly.
                 </p>
               </div>
             </div>
-
-            <PhoneMockup
-              image={mobilePublicCard}
-              alt="Mobile screenshot of a public SabiCard digital business card"
-              className="absolute bottom-6 right-4 z-20 w-[220px] md:right-8 md:w-[270px]"
-            />
           </div>
         </div>
       </section>
