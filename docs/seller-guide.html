@@ -335,6 +335,26 @@
       </section>
     </div>
 
+    <h2>RFID/NFC Card Type</h2>
+    <div class="policy">
+      <h3>Recommended Card Frequency</h3>
+      <p>SabiCard currently uses <strong>13.56 MHz NFC cards</strong>. Sellers should source writable NFC cards/tags that operate at 13.56 MHz and can store a URL record.</p>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Card/Tag Type</th><th>Compatibility Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>13.56 MHz NFC cards</td><td>Recommended for SabiCard. Use writable cards that support storing a tap URL.</td></tr>
+        <tr><td>NTAG-style NFC tags/cards</td><td>Commonly used for URL-based NFC cards. Confirm memory size is enough for the SabiCard tap URL.</td></tr>
+        <tr><td>MIFARE-style cards</td><td>Some are compatible for specific NFC use cases, but sellers should test before buying in bulk.</td></tr>
+        <tr><td>125 kHz RFID cards</td><td>Not recommended for SabiCard tap URL workflows. These are typically access-control cards and are not suitable for standard smartphone NFC URL writing.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">
+      Before ordering large batches, test a small sample with the seller dashboard, your NFC writing device, and a customer phone. The card must be writable and readable by common smartphones.
+    </div>
+
     <h2>Card Testing Procedure</h2>
     <ol>
       <li>After encoding, tap the physical card with a phone.</li>
