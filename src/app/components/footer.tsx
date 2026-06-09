@@ -1,5 +1,6 @@
 import { Link } from "react-router";
-import { Facebook, Twitter, Instagram, Linkedin, Mail } from "lucide-react";
+import { Facebook, Mail } from "lucide-react";
+import { FaTiktok } from "react-icons/fa";
 import sabiLogo from "../assets/sabi-logo.png";
 
 type FooterProps = {
@@ -23,8 +24,9 @@ export function Footer({ onOpenPrivacy, onOpenTerms }: FooterProps) {
             </div>
 
             <p className="text-gray-400 text-sm leading-6">
-              Smart NFC digital business cards for professionals, teams, and
-              businesses that want to share, connect, and grow better.
+              Smart NFC digital business cards for professionals, teams,
+              businesses, and sellers that want to share, connect, and grow
+              better.
             </p>
           </div>
 
@@ -63,16 +65,23 @@ export function Footer({ onOpenPrivacy, onOpenTerms }: FooterProps) {
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-gray-400 text-sm">
               <li>
-                <a href="mailto:support-sabicardapp@gmail.com" className="hover:text-white">
+                <a href="mailto:support@sabicard.app" className="hover:text-white">
                   Contact Support
                 </a>
               </li>
               <li>
-                <a href="mailto:support-sabicardapp@gmail.com" className="hover:text-white">
+                <a href="mailto:info@sabicard.app" className="hover:text-white">
                   Business Inquiries
                 </a>
               </li>
-
+              <li>
+                <a
+                  href="mailto:info@sabicard.app?subject=SabiCard%20Seller%20Pilot"
+                  className="hover:text-white"
+                >
+                  Seller Pilot
+                </a>
+              </li>
               <li>
                 <Link to="/login" className="hover:text-white">
                   Sign In
@@ -84,14 +93,22 @@ export function Footer({ onOpenPrivacy, onOpenTerms }: FooterProps) {
           <div>
             <h4 className="font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-gray-400 text-sm">
-
               <li>
                 <a
-                  href="mailto:support-sabicardapp@gmail.com"
+                  href="mailto:info@sabicard.app"
                   className="hover:text-white inline-flex items-center gap-2"
                 >
                   <Mail className="w-4 h-4" />
-                  support-sabicardapp@gmail.com
+                  info@sabicard.app
+                </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:support@sabicard.app"
+                  className="hover:text-white inline-flex items-center gap-2"
+                >
+                  <Mail className="w-4 h-4" />
+                  support@sabicard.app
                 </a>
               </li>
             </ul>
@@ -104,17 +121,23 @@ export function Footer({ onOpenPrivacy, onOpenTerms }: FooterProps) {
           </p>
 
           <div className="flex gap-4">
-            <a href="https://www.facebook.com/profile.php?id=61579502916436" className="text-gray-400 hover:text-white" aria-label="Facebook">
+            <a
+              href="https://web.facebook.com/profile.php?id=61579502916436"
+              className="text-gray-400 hover:text-white"
+              aria-label="Facebook"
+              target="_blank"
+              rel="noreferrer"
+            >
               <Facebook className="w-5 h-5" />
             </a>
-            <a href="https://www.tiktok.com/@sabicard" className="text-gray-400 hover:text-white" aria-label="Twitter">
-              <Twitter className="w-5 h-5" />
-            </a>
-            <a href="#" className="text-gray-400 hover:text-white" aria-label="Instagram">
-              <Instagram className="w-5 h-5" />
-            </a>
-            <a href="#" className="text-gray-400 hover:text-white" aria-label="LinkedIn">
-              <Linkedin className="w-5 h-5" />
+            <a
+              href="https://www.tiktok.com/@sabicard"
+              className="text-gray-400 hover:text-white"
+              aria-label="TikTok"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <FaTiktok className="w-5 h-5" />
             </a>
           </div>
         </div>

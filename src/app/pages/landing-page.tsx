@@ -19,6 +19,9 @@ import {
   X,
   ShieldCheck,
   FileText,
+  Building2,
+  Store,
+  CreditCard,
 } from "lucide-react";
 
 type PlanSettingRow = {
@@ -68,8 +71,8 @@ export function LandingPage() {
             title: settingsMap.get("free")?.name || "Free",
             priceLabel:
               Number(settingsMap.get("free")?.price || 0) === 0
-                ? "₱0"
-                : `₱${settingsMap.get("free")?.price ?? 0}`,
+                ? "\u20b10"
+                : `\u20b1${settingsMap.get("free")?.price ?? 0}`,
             suffix: "",
             features: [
               "1 Digital Card",
@@ -84,7 +87,7 @@ export function LandingPage() {
           {
             key: "pro",
             title: settingsMap.get("pro")?.name || "Pro",
-            priceLabel: `₱${settingsMap.get("pro")?.price ?? 0}`,
+            priceLabel: `\u20b1${settingsMap.get("pro")?.price ?? 0}`,
             suffix: "/30 days",
             features: [
               "Unlimited Digital Cards",
@@ -100,7 +103,7 @@ export function LandingPage() {
           {
             key: "business",
             title: settingsMap.get("business")?.name || "Business",
-            priceLabel: `₱${settingsMap.get("business")?.price ?? 0}`,
+            priceLabel: `\u20b1${settingsMap.get("business")?.price ?? 0}`,
             suffix: "/30 days",
             features: [
               "Everything in Pro",
@@ -120,7 +123,7 @@ export function LandingPage() {
           {
             key: "free",
             title: "Free",
-            priceLabel: "₱0",
+            priceLabel: "\u20b10",
             suffix: "",
             features: [
               "1 Digital Card",
@@ -135,7 +138,7 @@ export function LandingPage() {
           {
             key: "pro",
             title: "Pro",
-            priceLabel: "₱12",
+            priceLabel: "\u20b112",
             suffix: "/30 days",
             features: [
               "Unlimited Digital Cards",
@@ -151,7 +154,7 @@ export function LandingPage() {
           {
             key: "business",
             title: "Business",
-            priceLabel: "₱49",
+            priceLabel: "\u20b149",
             suffix: "/30 days",
             features: [
               "Everything in Pro",
@@ -183,6 +186,11 @@ export function LandingPage() {
       <section className="max-w-7xl mx-auto px-6 py-16 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-800 mb-6">
+              <CreditCard className="h-4 w-4" />
+              NFC digital business cards for professionals, teams, and sellers
+            </div>
+
             <div className="flex items-center gap-3 mb-6">
               <img
                 src={sabiLogo}
@@ -198,17 +206,18 @@ export function LandingPage() {
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Tap. Share. Connect.
+              Your NFC Business Card, Ready in One Tap
             </h1>
             <p className="text-xl text-gray-600 mb-8">
-              Transform the way you network with NFC digital business cards.
-              Share your contact information instantly with a single tap.
+              Create a digital profile, activate your NFC card, capture leads,
+              and track engagement. Recipients can open your card instantly with
+              no app required.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 to="/register"
-                className="bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-6 py-3 text-center inline-flex items-center justify-center gap-2"
+                className="bg-cyan-600 text-white hover:bg-cyan-700 rounded-lg px-6 py-3 text-center inline-flex items-center justify-center gap-2"
               >
                 Get Started
                 <ArrowRight className="w-5 h-5" />
@@ -221,6 +230,18 @@ export function LandingPage() {
                 Buy NFC Card
               </a>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-8 text-sm text-gray-600">
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                No app required for recipients
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                Secure account-based activation
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                Works with 13.56 MHz NFC cards
+              </div>
+            </div>
           </div>
 
           <div className="relative">
@@ -229,6 +250,52 @@ export function LandingPage() {
               alt="SabiCard NFC Business Card"
               className="rounded-2xl shadow-2xl w-full"
             />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-gray-100 bg-white py-14">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="rounded-xl border border-gray-200 p-6">
+              <div className="w-11 h-11 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
+                <Smartphone className="w-5 h-5 text-cyan-700" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">For Professionals</h3>
+              <p className="text-gray-600">
+                Share your profile, links, contact details, and social accounts
+                from one tap-ready digital card.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 p-6">
+              <div className="w-11 h-11 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
+                <Building2 className="w-5 h-5 text-cyan-700" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">For Businesses</h3>
+              <p className="text-gray-600">
+                Manage team cards, organization branding, leads, analytics, and
+                business-ready card inventory.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 p-6">
+              <div className="w-11 h-11 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
+                <Store className="w-5 h-5 text-cyan-700" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">For NFC Sellers</h3>
+              <p className="text-gray-600 mb-4">
+                Register NFC cards with credits, encode tap URLs, and monitor
+                customer activations from a seller dashboard.
+              </p>
+              <a
+                href="mailto:info@sabicard.app?subject=SabiCard%20Seller%20Pilot"
+                className="inline-flex items-center gap-2 text-cyan-700 font-medium hover:text-cyan-800"
+              >
+                Ask about seller pilot
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -244,8 +311,8 @@ export function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white rounded-xl p-8 shadow-md">
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                <Zap className="w-6 h-6 text-indigo-600" />
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
+                <Zap className="w-6 h-6 text-cyan-700" />
               </div>
               <h3 className="text-xl font-semibold mb-3">
                 Instant Contact Sharing
@@ -257,8 +324,8 @@ export function LandingPage() {
             </div>
 
             <div className="bg-white rounded-xl p-8 shadow-md">
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-indigo-600" />
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-cyan-700" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Lead Capture</h3>
               <p className="text-gray-600">
@@ -268,8 +335,8 @@ export function LandingPage() {
             </div>
 
             <div className="bg-white rounded-xl p-8 shadow-md">
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                <BarChart3 className="w-6 h-6 text-indigo-600" />
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
+                <BarChart3 className="w-6 h-6 text-cyan-700" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Tap Analytics</h3>
               <p className="text-gray-600">
@@ -286,47 +353,73 @@ export function LandingPage() {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">How It Works</h2>
             <p className="text-xl text-gray-600">
-              Getting started is simple and takes less than 5 minutes
+              From card activation to sharing, the flow is built to be simple
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             <div className="text-center">
-              <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
+              <div className="w-14 h-14 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
                 1
               </div>
               <div className="mb-4">
-                <Smartphone className="w-12 h-12 text-indigo-600 mx-auto" />
+                <CreditCard className="w-10 h-10 text-cyan-700 mx-auto" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Tap NFC Card</h3>
+              <h3 className="text-lg font-semibold mb-2">Get a Card</h3>
               <p className="text-gray-600">
-                Hold your NFC card near any smartphone to activate
+                Buy, receive, or issue a SabiCard-compatible NFC card
               </p>
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
+              <div className="w-14 h-14 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
                 2
               </div>
               <div className="mb-4">
-                <Share2 className="w-12 h-12 text-indigo-600 mx-auto" />
+                <Smartphone className="w-10 h-10 text-cyan-700 mx-auto" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Profile Opens</h3>
+              <h3 className="text-lg font-semibold mb-2">Tap or Scan</h3>
               <p className="text-gray-600">
-                Your digital business card opens instantly on their phone
+                Open the activation page from NFC or a tap link
               </p>
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl font-bold">
+              <div className="w-14 h-14 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
                 3
               </div>
               <div className="mb-4">
-                <CheckCircle className="w-12 h-12 text-indigo-600 mx-auto" />
+                <CheckCircle className="w-10 h-10 text-cyan-700 mx-auto" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Save Contact</h3>
+              <h3 className="text-lg font-semibold mb-2">Activate</h3>
               <p className="text-gray-600">
-                They save your contact with one click. Connection made!
+                Create or sign in to your account and claim the card
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-14 h-14 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
+                4
+              </div>
+              <div className="mb-4">
+                <Share2 className="w-10 h-10 text-cyan-700 mx-auto" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Share</h3>
+              <p className="text-gray-600">
+                Your public digital card opens instantly for contacts
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-14 h-14 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
+                5
+              </div>
+              <div className="mb-4">
+                <BarChart3 className="w-10 h-10 text-cyan-700 mx-auto" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Track</h3>
+              <p className="text-gray-600">
+                Monitor taps, leads, and engagement from your dashboard
               </p>
             </div>
           </div>
@@ -340,6 +433,23 @@ export function LandingPage() {
             <p className="text-xl text-gray-600">
               Choose the plan that works best for you
             </p>
+          </div>
+
+          <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-4 mb-6 max-w-4xl mx-auto">
+            <div className="flex items-start gap-3">
+              <Store className="w-5 h-5 text-cyan-700 mt-0.5" />
+              <div className="text-sm text-cyan-950">
+                <p className="font-semibold mb-1">Seller pilot available</p>
+                <p>
+                  Approved NFC sellers can register cards using seller credits
+                  and monitor customer activations. Email{" "}
+                  <a className="font-semibold underline" href="mailto:info@sabicard.app">
+                    info@sabicard.app
+                  </a>{" "}
+                  to ask about the pilot program.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-10 max-w-4xl mx-auto">
@@ -447,11 +557,12 @@ export function LandingPage() {
             Ready to Transform Your Networking?
           </h2>
           <p className="text-xl text-gray-600 mb-8">
-            Join professionals using SabiCard to make better connections
+            Join professionals, teams, and NFC sellers using SabiCard to make
+            better connections
           </p>
           <Link
             to="/register"
-            className="inline-flex items-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg px-8 py-4 text-lg"
+            className="inline-flex items-center gap-2 bg-cyan-600 text-white hover:bg-cyan-700 rounded-lg px-8 py-4 text-lg"
           >
             Get Started Free
             <ArrowRight className="w-5 h-5" />
@@ -699,7 +810,6 @@ export function LandingPage() {
     </div>
   );
 }
-
 type PolicyModalProps = {
   title: string;
   onClose: () => void;
