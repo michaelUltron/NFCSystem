@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Navbar } from "../components/navbar";
 import { Footer } from "../components/footer";
 import sabiLogo from "../assets/sabi-logo.png";
+import sabiBanner from "../assets/sabi_banner.jpg";
 import mobilePublicCard from "../assets/landing-screenshots/mobile-public-card.png";
 import mobileDashboard from "../assets/landing-screenshots/mobile-dashboard.png";
 import mobileSellerDashboard from "../assets/landing-screenshots/mobile-seller-dashboard.png";
@@ -268,28 +269,31 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="relative flex justify-center lg:justify-end">
-            <div className="absolute -left-2 top-16 hidden rounded-xl border border-cyan-100 bg-white p-4 shadow-xl md:block lg:left-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">
-                Live Profile
-              </p>
-              <p className="mt-1 text-sm text-gray-600">
-                Opens instantly after a tap
-              </p>
+          <div className="relative min-h-[540px] overflow-hidden rounded-3xl bg-slate-950 p-5 shadow-2xl md:min-h-[600px] lg:min-h-[620px]">
+            <img
+              src={sabiBanner}
+              alt="SabiCard physical NFC card"
+              className="absolute inset-x-5 top-5 h-[235px] w-[calc(100%-2.5rem)] rounded-2xl object-cover opacity-95 shadow-xl md:h-[280px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/10 to-slate-950" />
+
+            <div className="relative z-10 flex h-full min-h-[500px] flex-col justify-end md:min-h-[560px]">
+              <div className="mb-5 max-w-xs rounded-2xl border border-white/10 bg-white/10 p-4 text-white backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">
+                  Physical card to digital profile
+                </p>
+                <p className="mt-2 text-sm text-slate-100">
+                  One NFC tap opens a live profile visitors can save, call,
+                  email, or scan.
+                </p>
+              </div>
             </div>
+
             <PhoneMockup
               image={mobilePublicCard}
               alt="Mobile screenshot of a public SabiCard digital business card"
-              className="w-[280px] md:w-[320px]"
+              className="absolute bottom-6 right-4 z-20 w-[220px] md:right-8 md:w-[270px]"
             />
-            <div className="absolute -right-1 bottom-12 hidden rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:block">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                No App Required
-              </p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">
-                Save, call, email, or scan QR
-              </p>
-            </div>
           </div>
         </div>
       </section>
