@@ -66,14 +66,6 @@ export function DashboardPage() {
       getMySubscription(),
     ]);
 
-    const needsCardSetup =
-      !profileData?.username || !profileData?.full_name || !profileData?.avatar_url;
-
-    if (needsCardSetup) {
-      navigate("/profile?onboarding=1", { replace: true });
-      return;
-    }
-
     const currentPlan = subscription?.plan || "free";
     const currentAccess = getTrialFeatureAccess(subscription);
 
@@ -169,6 +161,11 @@ export function DashboardPage() {
 
   const previewUsername = profile?.username || "your-username";
   const cardLimit = getPlanCardLimit(plan);
+  const profileSetupItems = [
+    !profile?.full_name ? "name" : null,
+    !profile?.username ? "username" : null,
+  ].filter(Boolean);
+  const needsProfileSetup = profileSetupItems.length > 0;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -200,6 +197,26 @@ export function DashboardPage() {
             </div>
           ) : (
             <>
+              {needsProfileSetup ? (
+                <div className="mb-8 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">Finish your digital card setup</p>
+                      <p>
+                        Add your {profileSetupItems.join(" and ")} so your public
+                        SabiCard link is ready to share.
+                      </p>
+                    </div>
+                    <Link
+                      to="/profile?onboarding=1"
+                      className="inline-flex justify-center rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
+                    >
+                      Continue Setup
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <DashboardCard
                   title="My Cards"
