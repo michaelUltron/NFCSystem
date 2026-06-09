@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Navbar } from "../components/navbar";
 import { Footer } from "../components/footer";
-import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import sabiBanner from "../assets/sabi_banner.jpg";
 import sabiLogo from "../assets/sabi-logo.png";
+import mobilePublicCard from "../assets/landing-screenshots/mobile-public-card.png";
+import mobileDashboard from "../assets/landing-screenshots/mobile-dashboard.png";
+import mobileSellerDashboard from "../assets/landing-screenshots/mobile-seller-dashboard.png";
 import { supabase } from "../lib/supabase";
 
 import {
@@ -46,6 +47,13 @@ type LandingPlan = {
 };
 
 type ModalType = "privacy" | "terms" | null;
+
+type PhoneMockupProps = {
+  image: string;
+  alt: string;
+  label?: string;
+  className?: string;
+};
 
 export function LandingPage() {
   const [loadingPlans, setLoadingPlans] = useState(true);
@@ -260,12 +268,28 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="relative">
-            <ImageWithFallback
-              src={sabiBanner}
-              alt="SabiCard NFC Business Card"
-              className="rounded-2xl shadow-2xl w-full"
+          <div className="relative flex justify-center lg:justify-end">
+            <div className="absolute -left-2 top-16 hidden rounded-xl border border-cyan-100 bg-white p-4 shadow-xl md:block lg:left-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-cyan-700">
+                Live Profile
+              </p>
+              <p className="mt-1 text-sm text-gray-600">
+                Opens instantly after a tap
+              </p>
+            </div>
+            <PhoneMockup
+              image={mobilePublicCard}
+              alt="Mobile screenshot of a public SabiCard digital business card"
+              className="w-[280px] md:w-[320px]"
             />
+            <div className="absolute -right-1 bottom-12 hidden rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:block">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                No App Required
+              </p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">
+                Save, call, email, or scan QR
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -311,6 +335,61 @@ export function LandingPage() {
                 Ask about seller pilot
                 <ArrowRight className="w-4 h-4" />
               </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-950 py-16 text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-12 items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-cyan-300 mb-3">
+                Real App Screens
+              </p>
+              <h2 className="text-4xl font-bold mb-4">
+                See SabiCard in action
+              </h2>
+              <p className="text-lg text-slate-300 mb-6">
+                SabiCard gives users a mobile-friendly public card, account
+                dashboard, and seller tools for registering NFC cards with
+                credits.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  Public digital card
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  Tap and lead analytics
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+                  Seller credit dashboard
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+              <div className="sm:translate-y-6">
+                <PhoneMockup
+                  image={mobileDashboard}
+                  alt="Mobile screenshot of the SabiCard user dashboard"
+                  label="User Dashboard"
+                />
+              </div>
+              <div className="sm:-translate-y-4">
+                <PhoneMockup
+                  image={mobilePublicCard}
+                  alt="Mobile screenshot of the SabiCard public digital card"
+                  label="Digital Card"
+                />
+              </div>
+              <div className="sm:translate-y-6">
+                <PhoneMockup
+                  image={mobileSellerDashboard}
+                  alt="Mobile screenshot of the SabiCard seller dashboard"
+                  label="Seller Dashboard"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -852,6 +931,29 @@ function PolicyModal({ title, onClose, children }: PolicyModalProps) {
 
         <div className="overflow-y-auto max-h-[calc(90vh-80px)] px-6 py-6">
           {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PhoneMockup({ image, alt, label, className = "" }: PhoneMockupProps) {
+  return (
+    <div className={`mx-auto ${className}`}>
+      {label ? (
+        <p className="mb-3 text-center text-sm font-semibold text-cyan-200">
+          {label}
+        </p>
+      ) : null}
+      <div className="rounded-[2.25rem] border-[10px] border-slate-900 bg-slate-900 shadow-2xl ring-1 ring-white/10">
+        <div className="relative overflow-hidden rounded-[1.55rem] bg-white">
+          <div className="absolute left-1/2 top-2 z-10 h-1.5 w-16 -translate-x-1/2 rounded-full bg-slate-900/80" />
+          <img
+            src={image}
+            alt={alt}
+            className="block h-auto w-full"
+            loading="lazy"
+          />
         </div>
       </div>
     </div>
