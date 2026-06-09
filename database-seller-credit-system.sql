@@ -151,8 +151,8 @@ declare
 begin
   select *
   into v_seller
-  from public.sellers
-  where user_id = auth.uid();
+  from public.sellers s
+  where s.user_id = auth.uid();
 
   if v_seller.id is null then
     raise exception 'Seller account not found.';
