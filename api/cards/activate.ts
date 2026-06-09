@@ -84,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const cardResponse = await supabaseFetch(
       `/rest/v1/cards?card_uid=eq.${encodeURIComponent(
         cardUid
-      )}&select=id,card_uid,user_id,assigned_user_id,owned_by_user_id,organization_id,status,card_type,activation_date,created_at,is_primary,blocked_at,blocked_reason&limit=1`
+      )}&select=id,card_uid,user_id,assigned_user_id,owned_by_user_id,organization_id,seller_id,status,card_type,activation_date,created_at,is_primary,blocked_at,blocked_reason&limit=1`
     );
 
     const cards = await cardResponse.json();
@@ -134,9 +134,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     const updatedRows = await updateResponse.json();
+    const updatedCard = updatedRows?.[0] || null;
+
+    if (card.seller_id) {
+      await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          referred_by_seller_id: card.seller_id,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+    }
 
     return res.status(200).json({
-      card: updatedRows?.[0] || null,
+      card: updatedCard,
     });
   } catch (error: any) {
     return res.status(500).json({

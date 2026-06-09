@@ -9,6 +9,7 @@ import {
   CreditCard,
   Package,
   Building2,
+  Store,
   HelpCircle,
   LogOut,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import {
 import { checkIsAdmin } from "../lib/admin-service";
 import { supabase } from "../lib/supabase";
 import { getMyAccountManagementStatus } from "../lib/business-service";
+import { checkIsSeller } from "../lib/seller-service";
 
 type SidebarProps = {
   isOpen?: boolean;
@@ -52,6 +54,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const [analyticsAccess, setAnalyticsAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBusinessOwner, setIsBusinessOwner] = useState(false);
+  const [isSeller, setIsSeller] = useState(false);
   const [canManageBilling, setCanManageBilling] = useState(true);
   const [managedByOrganization, setManagedByOrganization] = useState(false);
 
@@ -73,6 +76,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           setAnalyticsAccess(false);
           setIsAdmin(false);
           setIsBusinessOwner(false);
+          setIsSeller(false);
           setCanManageBilling(true);
           setManagedByOrganization(false);
           setAuthChecked(true);
@@ -81,10 +85,11 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
         setIsAuthenticated(true);
 
-        const [subscription, admin, accountStatus] = await Promise.all([
+        const [subscription, admin, accountStatus, seller] = await Promise.all([
           getMySubscription(),
           checkIsAdmin(),
           getMyAccountManagementStatus(),
+          checkIsSeller(),
         ]);
 
         if (!mounted) return;
@@ -94,6 +99,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         setLeadAccess(access.canUseLeads);
         setAnalyticsAccess(access.canUseAnalytics);
         setIsAdmin(Boolean(admin));
+        setIsSeller(Boolean(seller));
         setIsBusinessOwner(Boolean(accountStatus?.is_business_owner));
         setCanManageBilling(
           accountStatus?.can_manage_billing === false ? false : true
@@ -109,6 +115,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         setAnalyticsAccess(false);
         setIsAdmin(false);
         setIsBusinessOwner(false);
+        setIsSeller(false);
         setCanManageBilling(true);
         setManagedByOrganization(false);
       } finally {
@@ -128,11 +135,13 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const isActive = (href: string) => {
     if (href === "/admin") return location.pathname === "/admin";
     if (href === "/admin/orders") return location.pathname === "/admin/orders";
+    if (href === "/admin/sellers") return location.pathname === "/admin/sellers";
     if (href === "/business") return location.pathname === "/business";
     if (href === "/business/cards")
       return location.pathname === "/business/cards";
     if (href === "/business-leads-analytics")
       return location.pathname === "/business-leads-analytics";
+    if (href === "/seller") return location.pathname === "/seller";
     return location.pathname === href;
   };
 
@@ -198,6 +207,21 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         icon: Package,
         visible: isAdmin,
       },
+      {
+        label: "Admin Sellers",
+        href: "/admin/sellers",
+        icon: Store,
+        visible: isAdmin,
+      },
+    ];
+
+    const sellerItems: NavItem[] = [
+      {
+        label: "Seller Dashboard",
+        href: "/seller",
+        icon: Store,
+        visible: isSeller,
+      },
     ];
 
     const accountItems: NavItem[] = [
@@ -238,6 +262,11 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         visible: adminItems.some((item) => item.visible),
       },
       {
+        title: "Seller",
+        items: sellerItems,
+        visible: sellerItems.some((item) => item.visible),
+      },
+      {
         title: "Account",
         items: accountItems,
         visible: accountItems.some((item) => item.visible),
@@ -249,6 +278,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     analyticsAccess,
     isAdmin,
     isBusinessOwner,
+    isSeller,
     managedByOrganization,
     canManageBilling,
   ]);

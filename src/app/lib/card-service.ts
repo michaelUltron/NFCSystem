@@ -7,6 +7,7 @@ export type CardRow = {
   assigned_user_id?: string | null;
   owned_by_user_id?: string | null;
   organization_id?: string | null;
+  seller_id?: string | null;
   status: string | null;
   card_type: string | null;
   activation_date: string | null;
@@ -76,6 +77,7 @@ export async function getMyCards() {
       assigned_user_id,
       owned_by_user_id,
       organization_id,
+      seller_id,
       status,
       card_type,
       activation_date,

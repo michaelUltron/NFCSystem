@@ -14,6 +14,7 @@ import { SettingsPage } from "./pages/settings-page";
 import { PlansPage } from "./pages/plans-page";
 import { OrderPage } from "./pages/order-page";
 import { AdminOrdersPage } from "./pages/admin-orders-page";
+import { AdminSellersPage } from "./pages/admin-sellers-page";
 import { ResetPasswordPage } from "./pages/reset-password-page";
 import { BusinessPage } from "./pages/business-page";
 import { BusinessCardsPage } from "./pages/business-cards-page";
@@ -21,6 +22,7 @@ import { OrganizationInvitesPage } from "./pages/organization-invites-page";
 import { BusinessLeadsAnalyticsPage } from "./pages/business-leads-analytics-page";
 import { HelpPage } from "./pages/help-page";
 import { AuthCallbackPage } from "./pages/auth-callback-page";
+import { SellerPage } from "./pages/seller-page";
 
 export const router = createBrowserRouter([
   {
@@ -92,6 +94,10 @@ export const router = createBrowserRouter([
   Component: AdminOrdersPage,
 },
 {
+  path: "/admin/sellers",
+  Component: AdminSellersPage,
+},
+{
   path: "/reset-password",
   Component: ResetPasswordPage,
 },
@@ -102,6 +108,10 @@ export const router = createBrowserRouter([
 {
   path: "/business/cards",
   Component: BusinessCardsPage,
+},
+{
+  path: "/seller",
+  Component: SellerPage,
 },
 
 {
