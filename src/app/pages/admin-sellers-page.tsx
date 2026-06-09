@@ -8,6 +8,10 @@ import {
   adminUpsertSeller,
   type AdminSellerRow,
 } from "../lib/seller-service";
+import {
+  adminListUserSubscriptions,
+  type AdminUserSubscriptionRow,
+} from "../lib/admin-subscription-service";
 import { checkIsAdmin } from "../lib/admin-service";
 import {
   BadgeCheck,
@@ -16,7 +20,9 @@ import {
   Search,
   ShieldAlert,
   Store,
+  UserRound,
   WalletCards,
+  X,
 } from "lucide-react";
 
 export function AdminSellersPage() {
@@ -26,7 +32,10 @@ export function AdminSellersPage() {
   const [saving, setSaving] = useState(false);
   const [adjustingSellerId, setAdjustingSellerId] = useState<string | null>(null);
   const [sellers, setSellers] = useState<AdminSellerRow[]>([]);
+  const [users, setUsers] = useState<AdminUserSubscriptionRow[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+  const [userPickerOpen, setUserPickerOpen] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -43,10 +52,17 @@ export function AdminSellersPage() {
 
     if (!admin) {
       setSellers([]);
+      setUsers([]);
       return;
     }
 
-    setSellers(await adminListSellers());
+    const [sellerData, userData] = await Promise.all([
+      adminListSellers(),
+      adminListUserSubscriptions(),
+    ]);
+
+    setSellers(sellerData);
+    setUsers(userData);
   };
 
   useEffect(() => {
@@ -88,6 +104,22 @@ export function AdminSellersPage() {
       );
     });
   }, [sellers, searchTerm]);
+
+  const filteredUsers = useMemo(() => {
+    const search = userSearchTerm.trim().toLowerCase();
+    if (!search) return users.slice(0, 30);
+
+    return users
+      .filter((user) => {
+        return (
+          user.user_id.toLowerCase().includes(search) ||
+          (user.email || "").toLowerCase().includes(search) ||
+          (user.full_name || "").toLowerCase().includes(search) ||
+          (user.username || "").toLowerCase().includes(search)
+        );
+      })
+      .slice(0, 30);
+  }, [users, userSearchTerm]);
 
   const activeCount = useMemo(
     () => sellers.filter((seller) => seller.status === "active").length,
@@ -138,6 +170,21 @@ export function AdminSellersPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSelectUser = (user: AdminUserSubscriptionRow) => {
+    setUserId(user.user_id);
+
+    if (!contactEmail && user.email) {
+      setContactEmail(user.email);
+    }
+
+    if (!businessName && (user.full_name || user.username)) {
+      setBusinessName(user.full_name || user.username || "");
+    }
+
+    setUserPickerOpen(false);
+    setUserSearchTerm("");
   };
 
   const handleAddCredits = async (seller: AdminSellerRow, delta: number) => {
@@ -254,12 +301,22 @@ export function AdminSellersPage() {
                       <label className="mb-2 block text-sm font-medium">
                         Seller User ID
                       </label>
-                      <input
-                        value={userId}
-                        onChange={(event) => setUserId(event.target.value)}
-                        className="w-full rounded-lg border px-3 py-2"
-                        placeholder="Auth user UUID"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          value={userId}
+                          onChange={(event) => setUserId(event.target.value)}
+                          className="min-w-0 flex-1 rounded-lg border px-3 py-2"
+                          placeholder="Auth user UUID"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setUserPickerOpen(true)}
+                          className="inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+                        >
+                          <UserRound className="h-4 w-4" />
+                          Find
+                        </button>
+                      </div>
                     </div>
 
                     <div>
@@ -433,6 +490,79 @@ export function AdminSellersPage() {
           </main>
         </div>
       </div>
+
+      {userPickerOpen ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4 py-8">
+          <div className="w-full max-w-2xl rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold">Select User</h2>
+                <p className="text-sm text-gray-500">
+                  Search by email, name, username, or UUID.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setUserPickerOpen(false)}
+                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+                aria-label="Close user picker"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  autoFocus
+                  value={userSearchTerm}
+                  onChange={(event) => setUserSearchTerm(event.target.value)}
+                  placeholder="seller@example.com"
+                  className="w-full rounded-lg border px-3 py-2 pl-10"
+                />
+              </div>
+
+              <div className="max-h-[420px] overflow-y-auto">
+                {filteredUsers.length === 0 ? (
+                  <p className="py-8 text-center text-gray-500">No users found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredUsers.map((user) => (
+                      <button
+                        key={user.user_id}
+                        type="button"
+                        onClick={() => handleSelectUser(user)}
+                        className="w-full rounded-lg border p-4 text-left hover:border-indigo-300 hover:bg-indigo-50"
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="font-medium">
+                              {user.full_name || user.username || "Unnamed User"}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {user.email || "No email"}
+                            </p>
+                          </div>
+
+                          <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                            {user.plan || "free"}
+                          </span>
+                        </div>
+
+                        <p className="mt-2 break-all text-xs text-gray-500">
+                          {user.user_id}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
