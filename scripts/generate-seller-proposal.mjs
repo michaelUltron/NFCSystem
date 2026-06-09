@@ -28,7 +28,7 @@ async function main() {
   <meta charset="utf-8" />
   <title>SabiCard Seller Partnership Proposal</title>
   <style>
-    @page { size: A4; margin: 22mm 16mm 20mm; }
+    @page { size: A4; margin: 24mm 16mm 26mm; }
     * { box-sizing: border-box; }
     body {
       color: #101828;
@@ -54,10 +54,10 @@ async function main() {
     }
     .doc-footer {
       border-top: 1px solid #d7eef8;
-      bottom: -14mm;
+      bottom: -20mm;
       color: #667085;
       font-size: 10px;
-      height: 36px;
+      height: 28px;
     }
     .brand {
       align-items: center;
@@ -155,6 +155,12 @@ async function main() {
       width: 24px;
     }
     .page-break { break-before: page; }
+    h2, h3, table, .card, .highlight, .step, .signature-line {
+      break-inside: avoid;
+    }
+    section, .value-grid, .package-grid, .steps, .signature-grid {
+      break-inside: avoid;
+    }
     .signature-grid {
       display: grid;
       gap: 28px;
