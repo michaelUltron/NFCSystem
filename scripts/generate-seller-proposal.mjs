@@ -302,6 +302,8 @@ async function main() {
     <tbody>
       <tr><th>General Inquiries</th><td>info@sabicard.app</td></tr>
       <tr><th>Seller and Customer Support</th><td>support@sabicard.app</td></tr>
+      <tr><th>Facebook</th><td>https://web.facebook.com/profile.php?id=61579502916436</td></tr>
+      <tr><th>TikTok</th><td>https://www.tiktok.com/@sabicard</td></tr>
     </tbody>
   </table>
 
