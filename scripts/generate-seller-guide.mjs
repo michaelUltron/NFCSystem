@@ -434,7 +434,7 @@ async function buildPdf(cardUid) {
   <meta charset="utf-8" />
   <title>SabiCard Seller Guide</title>
   <style>
-    @page { size: A4; margin: 22mm 16mm 20mm; }
+    @page { size: A4; margin: 18mm 16mm; }
     * { box-sizing: border-box; }
     body {
       color: #101828;
@@ -442,28 +442,6 @@ async function buildPdf(cardUid) {
       font-size: 12px;
       line-height: 1.5;
       margin: 0;
-    }
-    .doc-header, .doc-footer {
-      align-items: center;
-      background: #ffffff;
-      display: flex;
-      justify-content: space-between;
-      left: 0;
-      position: fixed;
-      right: 0;
-      z-index: 10;
-    }
-    .doc-header {
-      border-bottom: 1px solid #d7eef8;
-      height: 48px;
-      top: -16mm;
-    }
-    .doc-footer {
-      border-top: 1px solid #d7eef8;
-      bottom: -14mm;
-      color: #667085;
-      font-size: 10px;
-      height: 36px;
     }
     .brand {
       align-items: center;
@@ -637,16 +615,8 @@ async function buildPdf(cardUid) {
   </style>
 </head>
 <body>
-  <div class="doc-header">
-    <div class="brand"><img src="${logo}" /> SabiCard</div>
-    <div class="doc-title">Seller Guide</div>
-  </div>
-  <div class="doc-footer">
-    <span>Generated from live SabiCard screenshots</span>
-    <span>${generatedDate}</span>
-  </div>
-
   <section class="cover">
+    <div class="brand"><img src="${logo}" /> SabiCard</div>
     <div class="cover-mark">Seller Operating Manual</div>
     <h1>SabiCard Seller Guide</h1>
     <p class="muted">A practical walkthrough for seller account access, live card creation, NFC encoding, customer activation, credit rules, and platform conditions.</p>
