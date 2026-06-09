@@ -28,7 +28,7 @@ async function main() {
   <meta charset="utf-8" />
   <title>SabiCard Seller Partnership Proposal</title>
   <style>
-    @page { size: A4; margin: 24mm 16mm 26mm; }
+    @page { size: A4; margin: 18mm 16mm; }
     * { box-sizing: border-box; }
     body {
       color: #101828;
@@ -36,28 +36,6 @@ async function main() {
       font-size: 12px;
       line-height: 1.5;
       margin: 0;
-    }
-    .doc-header, .doc-footer {
-      align-items: center;
-      background: #ffffff;
-      display: flex;
-      justify-content: space-between;
-      left: 0;
-      position: fixed;
-      right: 0;
-      z-index: 10;
-    }
-    .doc-header {
-      border-bottom: 1px solid #d7eef8;
-      height: 48px;
-      top: -16mm;
-    }
-    .doc-footer {
-      border-top: 1px solid #d7eef8;
-      bottom: -20mm;
-      color: #667085;
-      font-size: 10px;
-      height: 28px;
     }
     .brand {
       align-items: center;
@@ -174,16 +152,8 @@ async function main() {
   </style>
 </head>
 <body>
-  <div class="doc-header">
-    <div class="brand"><img src="${logo}" /> SabiCard</div>
-    <div class="doc-title">Seller Partnership Proposal</div>
-  </div>
-  <div class="doc-footer">
-    <span>Confidential proposal for prospective SabiCard sellers</span>
-    <span>${generatedDate}</span>
-  </div>
-
   <section class="cover">
+    <div class="brand"><img src="${logo}" /> SabiCard</div>
     <div class="cover-mark">Seller Partnership Proposal</div>
     <h1>Grow Your NFC Card Business with SabiCard</h1>
     <p class="muted">A partnership proposal for ID, calling card, business card, and NFC product sellers who want to issue smart digital cards with a managed activation platform.</p>
