@@ -24,6 +24,8 @@ import {
   Camera,
   CreditCard,
   Sparkles,
+  Palette,
+  Check,
   X,
 } from "lucide-react";
 import {
@@ -47,6 +49,7 @@ import {
   getTrialFeatureAccess,
   type TrialFeatureAccess,
 } from "../lib/subscription-service";
+import { themeOptions, ThemePreview } from "../components/theme-options";
 
 const socialPlatforms = [
   {
@@ -344,6 +347,8 @@ export function ProfilePage() {
   const [imageEditor, setImageEditor] = useState<ImageEditorState | null>(null);
   const [applyingImageEdit, setApplyingImageEdit] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
+  const [draftTheme, setDraftTheme] = useState("signature");
+  const [themeDialogOpen, setThemeDialogOpen] = useState(false);
 
   const [form, setForm] = useState<FormState>({
     username: "",
@@ -358,7 +363,7 @@ export function ProfilePage() {
     bio: "",
     avatar_url: "",
     cover_photo_url: "",
-    theme: "default",
+    theme: "signature",
   });
 
   const [socials, setSocials] = useState<Record<string, string>>({
@@ -388,12 +393,18 @@ export function ProfilePage() {
           getMyCards().catch(() => []),
         ]);
 
-        setAccess(getTrialFeatureAccess(subscription));
+        const currentAccess = getTrialFeatureAccess(subscription);
+        setAccess(currentAccess);
         setActivatedCardCount(
           cards.filter((card) => card.status === "active").length
         );
 
         if (profile) {
+          const loadedTheme =
+            currentAccess.canUseThemes && !profile.theme
+              ? "signature"
+              : profile.theme ?? "signature";
+
           setForm({
             username: profile.username ?? "",
             full_name: profile.full_name ?? "",
@@ -407,8 +418,9 @@ export function ProfilePage() {
             bio: profile.bio ?? "",
             avatar_url: profile.avatar_url ?? "",
             cover_photo_url: profile.cover_photo_url ?? "",
-            theme: profile.theme ?? "default",
+            theme: loadedTheme,
           });
+          setDraftTheme(loadedTheme);
         }
 
         const socialMap: Record<string, string> = {
@@ -477,6 +489,12 @@ export function ProfilePage() {
   const previewUrl = form.username ? `/card/${form.username}` : "";
   const cleanUsername = form.username.trim().toLowerCase();
   const previewThemeValue = access?.canUseThemes ? form.theme : "default";
+  const selectedThemeOption =
+    themeOptions.find((option) => option.value === previewThemeValue) ??
+    themeOptions[0];
+  const draftThemeOption =
+    themeOptions.find((option) => option.value === draftTheme) ??
+    selectedThemeOption;
   const previewCoverUrl = access?.canUseBranding ? form.cover_photo_url : "";
   const previewTheme = getPreviewThemeClasses(previewThemeValue);
   const previewIsSignature = previewThemeValue === "signature";
@@ -554,6 +572,22 @@ export function ProfilePage() {
   const wizardDialogClass = onboardingMode
     ? "fixed inset-x-3 bottom-3 top-20 z-40 mx-auto max-w-3xl overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 shadow-2xl md:bottom-6 md:top-24 md:p-6"
     : "bg-white rounded-xl shadow-md p-6";
+
+  const openThemeDialog = () => {
+    setDraftTheme(form.theme || "signature");
+    setThemeDialogOpen(true);
+  };
+
+  const closeThemeDialog = () => {
+    setDraftTheme(form.theme || "signature");
+    setThemeDialogOpen(false);
+  };
+
+  const handleApplyTheme = () => {
+    setForm((prev) => ({ ...prev, theme: draftTheme }));
+    setThemeDialogOpen(false);
+    setSuccess("Theme selected. Save your profile to publish the change.");
+  };
 
   const openImageEditor = (kind: "avatar" | "cover", file: File) => {
     setImageEditor((prev) => {
@@ -877,10 +911,17 @@ export function ProfilePage() {
         avatar_url: form.avatar_url.trim(),
       };
 
+      const profilePayloadWithTheme = access?.canUseThemes
+        ? { ...profilePayload, theme: form.theme || "signature" }
+        : profilePayload;
+
       await updateMyProfile(
         access?.canUseBranding
-          ? { ...profilePayload, cover_photo_url: form.cover_photo_url.trim() }
-          : profilePayload
+          ? {
+              ...profilePayloadWithTheme,
+              cover_photo_url: form.cover_photo_url.trim(),
+            }
+          : profilePayloadWithTheme
       );
 
       await replaceMySocialLinks(
@@ -1544,6 +1585,77 @@ export function ProfilePage() {
                         )}
                       </div>
                     </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {!onboardingMode ? (
+                  <div className="bg-white rounded-xl shadow-md p-6">
+                    <div className="mb-5 flex items-start justify-between gap-4 flex-wrap">
+                      <div>
+                        <div className="mb-2 flex items-center gap-2">
+                          <Palette className="h-5 w-5 text-indigo-600" />
+                          <h2 className="text-xl font-semibold">Card Theme</h2>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Choose the visual style used by your public digital card.
+                        </p>
+                      </div>
+
+                      {access?.trialActive ? (
+                        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+                          Trial: {access.trialDaysRemaining}{" "}
+                          {access.trialDaysRemaining === 1 ? "day" : "days"} left
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-[220px_1fr]">
+                      <ThemePreview
+                        value={selectedThemeOption.value}
+                        swatch={selectedThemeOption.swatch}
+                      />
+
+                      <div className="flex flex-col justify-between rounded-xl border border-gray-200 bg-gray-50 p-4">
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            Current theme
+                          </p>
+                          <h3 className="mt-1 text-2xl font-semibold text-gray-900">
+                            {selectedThemeOption.label}
+                          </h3>
+                          <p className="mt-2 text-sm text-gray-600">
+                            {selectedThemeOption.description}
+                          </p>
+                          {!access?.canUseThemes ? (
+                            <p className="mt-3 text-sm text-amber-700">
+                              Your theme trial has ended. Visitors now see the
+                              Default theme until you upgrade.
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={openThemeDialog}
+                            disabled={!access?.canUseThemes}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+                          >
+                            <Palette className="h-4 w-4" />
+                            Change Theme
+                          </button>
+
+                          {!access?.canUseThemes ? (
+                            <Link
+                              to="/plans"
+                              className="inline-flex items-center justify-center rounded-lg border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50"
+                            >
+                              Upgrade
+                            </Link>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : null}
@@ -2381,6 +2493,101 @@ export function ProfilePage() {
         </main>
       </div>
     </div>
+
+    {themeDialogOpen ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+          <div className="flex items-start justify-between gap-4 border-b px-6 py-4">
+            <div>
+              <h2 className="text-xl font-semibold">Choose Card Theme</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Preview each style, then apply it to your digital card.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={closeThemeDialog}
+              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              aria-label="Close theme selector"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="overflow-y-auto p-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {themeOptions.map((option) => {
+                const selected = draftTheme === option.value;
+                return (
+                  <button
+                    type="button"
+                    key={option.value}
+                    onClick={() => setDraftTheme(option.value)}
+                    className={`group rounded-xl border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                      selected
+                        ? "border-indigo-500 bg-indigo-50 shadow-sm"
+                        : "border-gray-200 bg-white hover:border-indigo-200 hover:shadow-sm"
+                    }`}
+                  >
+                    <ThemePreview value={option.value} swatch={option.swatch} />
+
+                    <div className="mt-3 flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {option.label}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {option.description}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                          selected
+                            ? "border-indigo-600 bg-indigo-600 text-white"
+                            : "border-gray-300 text-transparent"
+                        }`}
+                      >
+                        <Check className="h-4 w-4" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-gray-50 px-6 py-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900">
+                Selected: {draftThemeOption.label}
+              </p>
+              <p className="text-xs text-gray-500">
+                {draftThemeOption.description}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={closeThemeDialog}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyTheme}
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                <Save className="h-4 w-4" />
+                Apply Theme
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : null}
 
     {imageEditor ? (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">

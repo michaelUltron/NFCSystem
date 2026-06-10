@@ -512,7 +512,9 @@ export function DigitalCardPage() {
   }, [cardUid, profile]);
 
   const effectiveTheme =
-    ownerAccess && !ownerAccess.canUseThemes ? "default" : profile?.theme;
+    ownerAccess && !ownerAccess.canUseThemes
+      ? "default"
+      : profile?.theme || "signature";
   const effectiveCoverUrl =
     ownerAccess && !ownerAccess.canUseBranding
       ? ""

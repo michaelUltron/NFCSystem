@@ -25,7 +25,7 @@ const profileSteps = [
   "Open My Card from the sidebar.",
   "Upload a clear profile photo and optional cover photo.",
   "Add your public username, name, role, company, and contact details.",
-  "Choose a theme in Settings, then preview the public card.",
+  "Choose a theme in My Digital Card, then preview the public card.",
   "Click Save Profile before sharing the card link.",
 ];
 
