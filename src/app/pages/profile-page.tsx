@@ -531,7 +531,8 @@ export function ProfilePage() {
   const wizardSteps = [
     {
       title: "Welcome",
-      detail: "Build a polished card in a few focused steps.",
+      detail:
+        "Start with the Signature theme, then add only the essentials needed to make your card shareable.",
     },
     {
       title: "Profile basics",
@@ -1474,6 +1475,38 @@ export function ProfilePage() {
                     </div>
 
                     <div className="mt-6 space-y-4">
+                      {showWizardWelcome ? (
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                          <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+                            <p className="text-sm font-semibold text-indigo-800">
+                              1. Set your link
+                            </p>
+                            <p className="mt-1 text-sm text-indigo-700">
+                              Choose the name people will see and the public URL
+                              they can open.
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-4">
+                            <p className="text-sm font-semibold text-cyan-800">
+                              2. Add contact details
+                            </p>
+                            <p className="mt-1 text-sm text-cyan-700">
+                              Add phone, email, website, location, and social
+                              links when you are ready.
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                            <p className="text-sm font-semibold text-emerald-800">
+                              3. Preview and share
+                            </p>
+                            <p className="mt-1 text-sm text-emerald-700">
+                              Review the public card and share it by link, QR,
+                              or NFC card.
+                            </p>
+                          </div>
+                        </div>
+                      ) : null}
+
                       <div className="grid grid-cols-2 gap-2 md:grid-cols-7">
                         {wizardSteps.map((step, index) => (
                           <button

@@ -10,6 +10,15 @@ function getSafeNext(value?: string | null) {
   return value;
 }
 
+function isRecentlyCreated(createdAt?: string) {
+  if (!createdAt) return false;
+
+  const createdTime = new Date(createdAt).getTime();
+  if (Number.isNaN(createdTime)) return false;
+
+  return Date.now() - createdTime < 5 * 60 * 1000;
+}
+
 export function AuthCallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -33,6 +42,16 @@ export function AuthCallbackPage() {
 
         if (!session) {
           throw new Error("No active session found.");
+        }
+
+        if (isRecentlyCreated(session.user.created_at)) {
+          await supabase
+            .from("profiles")
+            .update({
+              theme: "signature",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", session.user.id);
         }
 
         navigate(next, { replace: true });

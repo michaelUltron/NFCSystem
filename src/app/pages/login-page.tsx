@@ -11,6 +11,7 @@ export function LoginPage() {
   const [searchParams] = useSearchParams();
 
   const next = searchParams.get("next") || "/dashboard";
+  const registerNext = next === "/dashboard" ? "/profile?onboarding=1" : next;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -232,7 +233,7 @@ export function LoginPage() {
           <p className="text-center text-sm text-gray-600 mt-6">
             Don&apos;t have an account?{" "}
             <Link
-              to={`/register?next=${encodeURIComponent(next)}`}
+              to={`/register?next=${encodeURIComponent(registerNext)}`}
               className="text-indigo-600 hover:text-indigo-700"
             >
               Create account

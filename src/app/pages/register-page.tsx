@@ -9,7 +9,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const next = searchParams.get("next") || "/dashboard";
+  const next = searchParams.get("next") || "/profile?onboarding=1";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -65,6 +65,7 @@ export function RegisterPage() {
         options: {
           data: {
             full_name: fullName.trim(),
+            theme: "signature",
           },
         },
       });
@@ -77,6 +78,7 @@ export function RegisterPage() {
           .from("profiles")
           .update({
             full_name: fullName.trim(),
+            theme: "signature",
             updated_at: new Date().toISOString(),
           })
           .eq("id", data.user.id);
